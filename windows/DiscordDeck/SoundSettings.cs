@@ -16,12 +16,12 @@ public sealed partial class MainForm {
   try{settings.Save();}catch{(slot.Name,slot.CustomName)=before;throw;}
   status.Text=T("Name gespeichert: ","Name saved: ")+name;deck.Invalidate();
  }
- internal void ReplaceSoundSource(SoundSlot slot,string file,string suggestedName,string source){
+ internal void ReplaceSoundSource(SoundSlot slot,string file,string suggestedName,string source,string? customName=null){
   using(var probe=new AudioFileReader(file))if(probe.TotalTime<=TimeSpan.Zero)throw new IOException(T("Audiodatei ist leer.","Audio file is empty."));
   if(!settings.Slots.Any(s=>s.Id==slot.Id))throw new InvalidOperationException("Slot no longer exists");
-  var before=(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd);
-  slot.File=file;slot.SourceUrl=source;slot.TrimStart=slot.TrimEnd=0;if(!slot.CustomName)slot.Name=suggestedName;
-  try{settings.Save();}catch{(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd)=before;throw;}
+  var before=(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd,slot.CustomName);
+  slot.File=file;slot.SourceUrl=source;slot.TrimStart=slot.TrimEnd=0;if(customName!=null){slot.Name=customName;slot.CustomName=true;}else if(!slot.CustomName)slot.Name=suggestedName;
+  try{settings.Save();}catch{(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd,slot.CustomName)=before;throw;}
   audio.StopSlot(slot);durations.Remove(file);peaks.Remove(file);if(ReferenceEquals(slot,settings.Slots[selectedSound])){ForgetTrim();draftGain=slot.Volume;SyncSelected();}deck.Invalidate();
  }
  internal void EditSoundName(){
