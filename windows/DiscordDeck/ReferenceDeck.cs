@@ -116,8 +116,8 @@ public sealed partial class MainForm {
    var heading=T("Auf Knopfdruck.","Push to play.");using var titleFont=new Font("Segoe UI Semibold",50,FontStyle.Regular,GraphicsUnit.Pixel);float titleWidth=g.MeasureString(heading,titleFont,1000,StringFormat.GenericTypographic).Width;
    TextAt(g,heading,273,112,50,ink,true,width:titleWidth+48);float left=273+titleWidth+52;
    var name=string.IsNullOrWhiteSpace(owner.settings.Banks[owner.bank].Name)?"Sounds":owner.settings.Banks[owner.bank].Name;using var nameFont=new Font("Segoe UI",26,FontStyle.Regular,GraphicsUnit.Pixel);
-   float width=Math.Min(g.MeasureString(name,nameFont,1000,StringFormat.GenericTypographic).Width+36,Math.Max(100,1138-left-150));
-   HeadingBankBounds=new(left,134,width,38);HeadingRangeBounds=new(left+width+22,132,150,42);
+   float width=Math.Min(g.MeasureString(name,nameFont).Width+2,Math.Max(100,1138-left-160));
+   HeadingBankBounds=new(left,134,width,38);HeadingRangeBounds=new(left+width+10,132,150,42);
    TextAt(g,name,left,134,26,green,width:width,height:38);TextAt(g,$"{owner.bank*20+1:00} \u2014 {owner.bank*20+20:00}",HeadingRangeBounds.X,132,28,C(102,116,137),width:150,height:42);
   }
   static bool ShowStatus(string s)=>new[]{"fehl","erst","fail","first","not "}.Any(k=>s.Contains(k,StringComparison.OrdinalIgnoreCase))||new[]{"Sortieren:","Update:","Spielt:","Playing:","Discord","Gewählt","Selected","Fehler","Error","Kein","No "}.Any(s.StartsWith);
