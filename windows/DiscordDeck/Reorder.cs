@@ -19,12 +19,12 @@ public sealed partial class MainForm {
  }
 
  sealed partial class ReferenceDeck {
-  internal RectangleF ReorderButtonBounds{get;private set;}=new(855,124,36,36);
+  internal RectangleF ReorderButtonBounds{get;private set;}=new(855,132,36,36);
   readonly ToolTip reorderTip=new();bool reorderTipVisible;
   void DrawReorderButton(Graphics g){
    string range=$"{owner.bank*20+1:00} — {owner.bank*20+20:00}";using var font=new Font("Segoe UI",36,FontStyle.Regular,GraphicsUnit.Pixel);
    float x=(En?603:681)+g.MeasureString(range,font,1000,StringFormat.GenericTypographic).Width+14;
-   ReorderButtonBounds=new(Math.Min(x,GridRight-42),124,36,36);var r=ReorderButtonBounds;
+   ReorderButtonBounds=new(Math.Min(x,GridRight-42),132,36,36);var r=ReorderButtonBounds;
    if(owner.sorting||r.Contains(mouse))Box(g,r,C(34,42,44),C(25,32,36),6,owner.sorting?green:muted);
    Pencil(g,new(r.X+5,r.Y+3,25,28));Hit(r,owner.ToggleSorting,owner.sorting?T("Fertig","Done"):T("Umsortieren","Reorder"));
   }
