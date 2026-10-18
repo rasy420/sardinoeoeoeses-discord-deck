@@ -39,6 +39,24 @@ public sealed partial class MainForm {
    Event("OnMouseDown",X(20));Event("OnMouseUp",X(20));await Task.Delay(300);Check(dialog.Previewing,"Click inside selection plays");dialog.From.Value=11;Check(!dialog.Previewing,"Changing the range stops timeline playback");
    Event("OnMouseDown",X(90));Event("OnMouseUp",X(90));Check(!dialog.Previewing,"Click at the very end does not start an empty clip");
    Event("OnMouseLeave",0);Check(dialog.Wave.Hover<0,"Hover marker disappears when the mouse leaves");
+   // I/O-Tasten: echte WM_KEYDOWN-Nachrichten über die Nachrichtenschleife.
+   async Task Key(Control target,Keys k){PostMessage(target.Handle,0x100,(IntPtr)k,(IntPtr)1);PostMessage(target.Handle,0x101,(IntPtr)k,unchecked((IntPtr)(int)0xC0000001));await Task.Delay(80);}
+   dialog.ActiveControl=dialog.Wave;dialog.From.Value=11;dialog.To.Value=40;
+   Event("OnMouseMove",X(20));await Key(dialog.Wave,Keys.I);Check(Math.Abs((double)dialog.From.Value-20)<.4&&dialog.To.Value==40,"I sets the start marker at the mouse position");
+   Event("OnMouseMove",X(60));await Key(dialog.Wave,Keys.O);Check(Math.Abs((double)dialog.To.Value-60)<.4&&Math.Abs((double)dialog.From.Value-20)<.4,"O sets the end marker at the mouse position");
+   Check(dialog.Controls.OfType<Control>().SelectMany(Flatten).OfType<Label>().Any(l=>l.Text.StartsWith("Ende (O): 1:0")),"Status confirms the out point in minute format");
+   Event("OnMouseMove",X(70));await Key(dialog.Wave,Keys.I);Check(Math.Abs((double)dialog.From.Value-70)<.4&&dialog.To.Value==dialog.To.Maximum,"I behind the end resets the end to the audio end");
+   Event("OnMouseMove",X(5));await Key(dialog.Wave,Keys.O);Check(dialog.From.Value==0&&Math.Abs((double)dialog.To.Value-5)<.4,"O before the start resets the start to 0");
+   Event("OnMouseMove",X(0));await Key(dialog.Wave,Keys.O);Check(dialog.To.Value>=.05m&&dialog.To.Value>dialog.From.Value,"O at 0 keeps a minimal clip");
+   Event("OnMouseMove",X(90));await Key(dialog.Wave,Keys.I);Check(dialog.From.Value<dialog.To.Value&&dialog.To.Value==dialog.To.Maximum,"I at the very end keeps a minimal clip");
+   dialog.From.Value=10;dialog.To.Value=40;Event("OnMouseLeave",0);await Key(dialog.Wave,Keys.I);Check(dialog.From.Value==10&&dialog.To.Value==40,"I without mouse over timeline and without playback changes nothing");
+   Event("OnMouseMove",X(25));var msg=new Message();var handled=(bool)typeof(AudioImportDialog).GetMethod("ProcessCmdKey",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(dialog,new object[]{msg,Keys.Control|Keys.I})!;Check(!handled&&dialog.From.Value==10,"Ctrl+I is not treated as in point");
+   dialog.ActiveControl=dialog.SoundName;var nameBefore=dialog.SoundName.Text;await Key(dialog.SoundName,Keys.I);await Key(dialog.SoundName,Keys.O);Check(dialog.From.Value==10&&dialog.To.Value==40,"I/O while typing the name do not move markers");Check(dialog.SoundName.Text.Length==nameBefore.Length+2&&dialog.SoundName.Text.Contains("io"),"Typed i and o land in the name field ["+nameBefore+"] -> ["+dialog.SoundName.Text+"]");typeof(AudioImportDialog).GetField("nameEdited",BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(dialog,false);typeof(AudioImportDialog).GetMethod("SuggestName",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(dialog,null);
+   dialog.ActiveControl=dialog.From;await Key(dialog.From,Keys.O);Check(dialog.To.Value==40,"I/O while typing a time do not move markers");dialog.From.Value=10;dialog.ActiveControl=dialog.Wave;
+   Event("OnMouseDown",X(15));Event("OnMouseUp",X(15));Event("OnMouseLeave",0);await Task.Delay(500);var head=dialog.Wave.Position;await Key(dialog.Wave,Keys.I);Check(Math.Abs((double)dialog.From.Value-head)<.4&&dialog.From.Value>15,"Without hover, I uses the playhead while listening");Check(dialog.Previewing,"Playback continues after setting the in point");
+   await Task.Delay(300);head=dialog.Wave.Position;await Key(dialog.Wave,Keys.O);Check(Math.Abs((double)dialog.To.Value-head)<.4&&!dialog.Previewing,"O at the playhead sets the end and stops");
+   dialog.ActiveControl=dialog.Slots;Event("OnMouseMove",X(33));await Key(dialog.Slots,Keys.I);Check(Math.Abs((double)dialog.From.Value-33)<.4&&dialog.To.Value==dialog.To.Maximum,"I also works while the slot list has focus");
+   Event("OnMouseLeave",0);dialog.ActiveControl=dialog.Wave;
    // Name direkt beim Speichern vergeben.
    Check(dialog.SoundName.Text=="Langes Video","Name field suggests the video title after loading");
    dialog.Slots.SelectedIndex=2;Check(dialog.SoundName.Text=="Eigener Name","Name field shows an existing custom name of the chosen slot");
@@ -46,17 +64,31 @@ public sealed partial class MainForm {
    dialog.From.Value=5;dialog.To.Value=8;await dialog.SaveAudio();var saved=Settings.Load().Slots[1];
    Check(saved.Name=="Mein Knopf"&&saved.CustomName&&host.settings.Slots[1].Name=="Mein Knopf"&&File.Exists(saved.File)&&changed==1,"Typed name renames the button when saving");
    Check(dialog.Slots.Items[1]!.ToString()=="02 · Mein Knopf","Slot list shows the new name right away");
+   Check(dialog.SavedConfirmed&&dialog.Save.Text.StartsWith("✓")&&dialog.Controls.OfType<Control>().SelectMany(Flatten).OfType<Label>().Any(l=>l.Text.StartsWith("✓  Gespeichert auf Platz 02: Mein Knopf")),"Saving shows a check mark in the button and status line");
+   Check(dialog.Slots.SelectedIndex==2&&dialog.Controls.OfType<Control>().SelectMany(Flatten).OfType<Label>().Any(l=>l.Text.Contains("Nächster freier Platz ist ausgewählt: 03")),"After saving the next free slot is selected");
+   Check(dialog.Slots.Items[2]!.ToString()=="03 · Eigener Name  (frei)"&&!dialog.Slots.Items[1]!.ToString()!.Contains("frei"),"Slot list marks free slots");
+   using(var b=new Bitmap(dialog.Width,dialog.Height)){dialog.DrawToBitmap(b,dialog.ClientRectangle);b.Save(Path.Combine(AppContext.BaseDirectory,"import-saved-check.png"));}
+   await Task.Delay(3300);Check(!dialog.SavedConfirmed&&dialog.Save.Text=="Ausschnitt speichern","Check mark disappears after 3 seconds");
    using(var r=new AudioFileReader(saved.File))Check(Math.Abs(r.TotalTime.TotalSeconds-3)<.15,"Saved clip has the selected length");
    host.bank=0;using(var image=new Bitmap(host.deck.Width,host.deck.Height)){host.deck.DrawToBitmap(image,host.deck.ClientRectangle);image.Save(Path.Combine(AppContext.BaseDirectory,"import-name-deck.png"));}
    var a=host.deck.AccessibilityObject;Check(Enumerable.Range(0,a.GetChildCount()).Any(i=>(a.GetChild(i)?.Name??"").Contains("Mein Knopf")),"Deck tile shows the new name");
    dialog.Slots.SelectedIndex=3;Check(dialog.SoundName.Text=="Langes Video","Next slot gets the title suggestion again");await dialog.SaveAudio();saved=Settings.Load().Slots[3];Check(saved.Name=="Langes Video"&&!saved.CustomName,"Untouched name field keeps automatic title naming");
    dialog.Slots.SelectedIndex=2;await dialog.SaveAudio();saved=Settings.Load().Slots[2];Check(saved.Name=="Eigener Name"&&saved.CustomName,"Untouched field keeps an existing custom name");
    dialog.Slots.SelectedIndex=5;dialog.SoundName.Text="   ";await dialog.SaveAudio();saved=Settings.Load().Slots[5];Check(saved.Name=="Langes Video"&&!saved.CustomName,"Empty name falls back to the video title");
-   dialog.Slots.SelectedIndex=6;dialog.SoundName.Text="Tab\tName";var before=Settings.Load().Slots[6].File;await dialog.SaveAudio();Check(Settings.Load().Slots[6].File==before,"Name with control characters is refused without saving");
+   dialog.Slots.SelectedIndex=6;dialog.SoundName.Text="Tab\tName";var before=Settings.Load().Slots[6].File;await dialog.SaveAudio();Check(Settings.Load().Slots[6].File==before,"Name with control characters is refused without saving");Check(!dialog.SavedConfirmed&&!dialog.Save.Text.StartsWith("✓")&&dialog.Controls.OfType<Control>().SelectMany(Flatten).OfType<Label>().Any(l=>l.Text=="Der Name enthält ungültige Zeichen."&&l.ForeColor!=Color.FromArgb(92,196,128)),"Error right after a save replaces the green check mark");
+   // Automatisch der nächste freie Platz.
+   var s=host.settings;s.Slots[0].File=s.Slots[1].File;s.Save();
+   using(var next=new AudioImportDialog(host,s,()=>{})){Prepare(next);Check(next.Slots.SelectedIndex==4,"New import dialog preselects the first free slot (05)");await next.LoadSource(source);next.From.Value=1;next.To.Value=2;await next.SaveAudio();
+    Check(Settings.Load().Slots[4].File.Length>0&&next.Slots.SelectedIndex==6,"Saving into the preselected slot moves on to the next free one");
+    Check(AudioImportDialog.NextFree(s,98)==99&&AudioImportDialog.NextFree(s,99)==6,"Search wraps around after slot 100");
+    var keep=s.Slots.Select(x=>x.File).ToList();foreach(var x in s.Slots)if(x.File=="")x.File="belegt.mp3";Check(AudioImportDialog.NextFree(s,-1)==-1,"No free slot is reported when all are taken");
+    next.Slots.SelectedIndex=8;next.From.Value=1;next.To.Value=2;await next.SaveAudio();Check(next.Slots.SelectedIndex==8&&next.Controls.OfType<Control>().SelectMany(Flatten).OfType<Label>().Any(l=>l.Text.Contains("Alle Plätze sind belegt")),"When all slots are taken the slot stays and the user is told");
+    for(int i=0;i<s.Slots.Count;i++)if(s.Slots[i].File=="belegt.mp3")s.Slots[i].File=keep[i];s.Save();}
    dialog.StartPosition=FormStartPosition.Manual;dialog.Location=new Point(40,40);dialog.Show();dialog.Activate();await Task.Delay(400);Event("OnMouseMove",X(45));Event("OnMouseDown",X(30));Event("OnMouseUp",X(30));await Task.Delay(500);dialog.Refresh();using(var shot=new Bitmap(dialog.Width,dialog.Height)){using(var g=Graphics.FromImage(shot))g.CopyFromScreen(dialog.Location,Point.Empty,dialog.Size);shot.Save(Path.Combine(AppContext.BaseDirectory,"import-timeline-screen.png"));}dialog.TogglePreview();dialog.Hide();
    host.SetLanguage(true);using(var english=new AudioImportDialog(host,host.settings,()=>{})){Prepare(english);await english.LoadSource(source);Check(english.To.Text=="1:30.000","English minute format");using var b=new Bitmap(english.Width,english.Height);english.DrawToBitmap(b,english.ClientRectangle);b.Save(Path.Combine(AppContext.BaseDirectory,"import-timeline-en.png"));}
    host.SetLanguage(false);
   }catch(Exception e){failure=e;}finally{File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"import-timeline-test.json"),JsonSerializer.Serialize(new{ok=failure==null,checks,error=failure?.ToString()},new JsonSerializerOptions{WriteIndented=true}));driver.Close();}};Application.Run(driver);if(failure!=null)Environment.ExitCode=1;
  }
+ [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool PostMessage(IntPtr hWnd,int msg,IntPtr wParam,IntPtr lParam);
  static IEnumerable<Control> Flatten(Control c)=>new[]{c}.Concat(c.Controls.OfType<Control>().SelectMany(Flatten));
 }

@@ -14,7 +14,7 @@ public sealed class AudioEngine:IDisposable {
  public long MirroredNonzero=>Interlocked.Read(ref mirroredNonzero);
  public long RenderedNonzero=>Interlocked.Read(ref renderedNonzero);
  static int CountNonzero(float[] samples,int offset,int count){int n=0;for(int i=offset;i<offset+count;i++)if(Math.Abs(samples[i])>0.00001f)n++;return n;}
- WasapiOut? output;WasapiCapture? mic;BufferedWaveProvider? micBuffer;VolumeSampleProvider? micGain;readonly VolumeSampleProvider master;VolumeSampleProvider? routeGain;
+ WasapiOut? output;WasapiCapture? mic;BufferedWaveProvider? micBuffer;MicLevel? micGain;readonly VolumeSampleProvider master;VolumeSampleProvider? routeGain;
  public static bool IsVirtualOutput(string name)=>name.Contains("CABLE",StringComparison.OrdinalIgnoreCase)||name.Contains("Steam Streaming Microphone",StringComparison.OrdinalIgnoreCase);
  public bool Running=>output?.PlaybackState==PlaybackState.Playing;
  public event Action<string>? Failed;
@@ -28,13 +28,14 @@ public sealed class AudioEngine:IDisposable {
  if(s.MonitorEnabled){using var headphones=string.IsNullOrEmpty(s.MonitorId)?en.GetDefaultAudioEndpoint(DataFlow.Render,Role.Communications):en.GetDevice(s.MonitorId);if(IsVirtualOutput(headphones.FriendlyName))throw new InvalidOperationException(T("Zum Mithören echte Kopfhörer auswählen.","Choose real headphones for listening."));monitorBuffer=new BufferedWaveProvider(master.WaveFormat){BufferDuration=TimeSpan.FromMilliseconds(200),DiscardOnBufferOverflow=true,ReadFully=true};monitor=new WasapiOut(headphones,AudioClientShareMode.Shared,true,40);monitor.PlaybackStopped+=OutputStopped;monitor.Init(new TapProvider(monitorBuffer.ToSampleProvider(),(b,o,n)=>Interlocked.Add(ref renderedNonzero,CountNonzero(b,o,n))));monitor.Play();}
  if(s.MixMicrophone){using var md=en.GetDevice(s.MicrophoneId);if(md.FriendlyName.Contains("CABLE",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException(T("Als Mikrofon bitte dein echtes Mikrofon wählen (Rückkopplungsschutz).","Please choose your real microphone as the microphone (feedback protection)."));
  mic=new WasapiCapture(md);micBuffer=new BufferedWaveProvider(mic.WaveFormat){BufferDuration=TimeSpan.FromMilliseconds(400),DiscardOnBufferOverflow=true,ReadFully=true};
- micGain=new VolumeSampleProvider(Convert(micBuffer.ToSampleProvider())){Volume=s.MicrophoneVolume};mixer.AddMixerInput(micGain);mic.DataAvailable+=MicData;mic.RecordingStopped+=MicStopped;mic.StartRecording();}
+ micGain=new MicLevel(Convert(micBuffer.ToSampleProvider())){Gain=Math.Clamp(s.MicrophoneVolume,0,MaxMicrophone)};mixer.AddMixerInput(micGain);mic.DataAvailable+=MicData;mic.RecordingStopped+=MicStopped;mic.StartRecording();}
  output=new WasapiOut(device,AudioClientShareMode.Shared,true,40);output.PlaybackStopped+=OutputStopped;routeGain=new VolumeSampleProvider(mixer){Volume=device.FriendlyName.Contains("Steam Streaming Microphone",StringComparison.OrdinalIgnoreCase)?0.03162278f:1f};output.Init(routeGain);output.Play();
  }catch{Stop();throw;}}
  void MicData(object? sender,WaveInEventArgs e){micBuffer?.AddSamples(e.Buffer,0,e.BytesRecorded);}
  void MicStopped(object? sender,StoppedEventArgs e){if(e.Exception!=null)Failed?.Invoke(T("Mikrofon getrennt: ","Microphone disconnected: ")+e.Exception.Message);}
  void OutputStopped(object? sender,StoppedEventArgs e){if(e.Exception!=null)Failed?.Invoke(T("Audioausgabe unterbrochen: ","Audio output interrupted: ")+e.Exception.Message);}
- public void SetVolume(float volume,float microphone){master.Volume=Math.Clamp(volume,0,1);if(micGain!=null)micGain.Volume=Math.Clamp(microphone,0,2);}
+ public void SetVolume(float volume,float microphone){master.Volume=Math.Clamp(volume,0,1);if(micGain!=null)micGain.Gain=Math.Clamp(microphone,0,MaxMicrophone);}
+ public const float MaxMicrophone=4f;internal float MicrophoneGain=>micGain?.Gain??-1;
  public void Play(SoundSlot slot){if(!Running)throw new InvalidOperationException(T("Audio zuerst starten.","Start audio first."));if(!File.Exists(slot.File))throw new FileNotFoundException(T("Sounddatei fehlt. Bitte neu zuweisen.","Sound file is missing. Please assign it again."),slot.File);var c=new Clip(slot.File,slot.Volume,slot);lock(gate){if(clips.Count>=16){c.Dispose();throw new InvalidOperationException(T("Maximal 16 gleichzeitige Sounds. Mit Stopp beenden.","At most 16 sounds at once. Use Stop to end them."));}clips.Add(c);}try{sounds.AddMixerInput(c);}catch{lock(gate)clips.Remove(c);c.Dispose();throw;}}
  public int Playing{get{lock(gate)return clips.Count;}}
  public string PlayingSignature{get{lock(gate)return string.Join(",",clips.Select(c=>c.Slot?.Id).Distinct().Order());}}
@@ -45,6 +46,13 @@ public sealed class AudioEngine:IDisposable {
  public void StopSounds(){Clip[] all;lock(gate){all=clips.ToArray();clips.Clear();}foreach(var c in all){sounds.RemoveMixerInput(c);c.Dispose();}monitorBuffer?.ClearBuffer();}
  public void Stop(){if(output!=null){output.PlaybackStopped-=OutputStopped;output.Stop();output.Dispose();output=null;}if(monitor!=null){monitor.PlaybackStopped-=OutputStopped;monitor.Stop();monitor.Dispose();monitor=null;}monitorBuffer=null;if(mic!=null){mic.DataAvailable-=MicData;mic.RecordingStopped-=MicStopped;mic.StopRecording();mic.Dispose();mic=null;}mixer.RemoveAllMixerInputs();mixer.AddMixerInput(soundTap);StopSounds();micBuffer=null;micGain=null;}
  public void Dispose()=>Stop();
+ // Mikrofon im Mix: Verstaerkung bis 400 %, Spitzen werden hart auf +-1 begrenzt statt zu uebersteuern.
+ internal sealed class MicLevel:ISampleProvider {
+ readonly ISampleProvider source;public volatile float Gain=1;
+ public MicLevel(ISampleProvider source){this.source=source;}
+ public WaveFormat WaveFormat=>source.WaveFormat;
+ public int Read(float[] buffer,int offset,int count){int n=source.Read(buffer,offset,count);float g=Gain;if(g!=1)for(int i=offset;i<offset+n;i++)buffer[i]=Math.Clamp(buffer[i]*g,-1f,1f);return n;}
+ }
  internal sealed class TapProvider:ISampleProvider {
  readonly ISampleProvider source;readonly Action<float[],int,int> tap;
  public TapProvider(ISampleProvider source,Action<float[],int,int> tap){this.source=source;this.tap=tap;}

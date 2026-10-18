@@ -10,6 +10,7 @@ static class Program {
  if(args.Contains("--overlay-test")){MainForm.RunOverlayTest();return;}
  if(args.Contains("--tile-stop-test")){MainForm.RunTileStopTest();return;}
  if(args.Contains("--import-timeline-test")){MainForm.RunImportTimelineTest();return;}
+ if(args.Contains("--mic-level-test")){MainForm.RunMicLevelTest();return;}
  if(args.Contains("--mobile-stop-test")){MainForm.RunMobileStopTest(args.Contains("--fixture"));return;}
  if(args.Contains("--bank-test")){MainForm.RunBankTest();return;}if(args.Contains("--layout-test")){MainForm.RunLayoutTest();return;}if(args.Contains("--mega-test")){MainForm.RunMegaTest();return;}if(args.Contains("--update-test")){UpdateTest.Run();return;}
  if(args.Contains("--reorder-test")){MainForm.RunReorderTest();return;}

@@ -7,7 +7,7 @@ static class DesignTest {
  Click(100,400);Check((int)Field("bank")==4,"Bank 5 unreachable");
  deck.GetType().GetMethod("OnMouseWheel",flags)!.Invoke(deck,new object[]{new MouseEventArgs(MouseButtons.None,0,700,700,-120)});deck.GetType().GetMethod("OnMouseWheel",flags)!.Invoke(deck,new object[]{new MouseEventArgs(MouseButtons.None,0,700,700,-120)});deck.DrawToBitmap(image,deck.ClientRectangle);Click(600,785);Check((int)Field("selectedSound")==99,"Slot 100 unreachable");
  Click(1506,412);Check(((NumericUpDown)Field("selectedGain")).Value==400,"400 percent unreachable");Call("Dispatch","gain",99*401+137);Check(((NumericUpDown)Field("selectedGain")).Value==137,"Phone gain did not synchronize");
- Click(811,961);Check(((Settings)Field("settings")).MasterVolume==0,"Master zero failed");Click(1212,961);Check(((Settings)Field("settings")).MasterVolume==1,"Master maximum failed");
+ Click(811,946);Check(((Settings)Field("settings")).MasterVolume==0,"Master zero failed");Click(1212,946);Check(((Settings)Field("settings")).MasterVolume==1,"Master maximum failed");
  form.ClientSize=new Size(1080,720);form.PerformLayout();using var small=new Bitmap(1080,720);deck.DrawToBitmap(small,deck.ClientRectangle);small.Save(Path.Combine(AppContext.BaseDirectory,"design-small.png"));
  File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"design-test.json"),JsonSerializer.Serialize(new{ok=true,bank5=true,slot100=true,gain400=true,phoneGainSync=true,masterRange=true,smallWindow=true}));}finally{File.WriteAllBytes(Settings.Config,original);}}
 }
