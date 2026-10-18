@@ -52,7 +52,7 @@ public sealed partial class MainForm {
  IWavePlayer? panelPlayer;AudioEngine.Clip? panelClip;readonly Stopwatch panelClock=new();double panelFrom;System.Windows.Forms.Timer? panelTicker;
  internal bool PanelPreviewing=>panelPlayer!=null;
  internal double PanelPosition=>panelFrom+panelClock.Elapsed.TotalSeconds;
- IWavePlayer StartPreview(AudioEngine.Clip clip,Action stopped){
+ internal IWavePlayer StartPreview(AudioEngine.Clip clip,Action stopped){
   MMDevice? device=null;try{using var en=new MMDeviceEnumerator();device=string.IsNullOrEmpty(settings.MonitorId)?en.GetDefaultAudioEndpoint(DataFlow.Render,Role.Multimedia):en.GetDevice(settings.MonitorId);}catch{}
   IWavePlayer player=device!=null?new WasapiOut(device,AudioClientShareMode.Shared,true,80):new WaveOutEvent();
   player.PlaybackStopped+=(_,_)=>{if(!IsDisposed)BeginInvoke(stopped);};player.Init(clip);player.Play();return player;

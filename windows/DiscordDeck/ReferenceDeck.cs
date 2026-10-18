@@ -81,7 +81,7 @@ public sealed partial class MainForm {
    UpdateButton(g);
 
    g.DrawImage(reference,new RectangleF(40,888,140,57),new RectangleF(40,888,140,57),GraphicsUnit.Pixel);TextAt(g,T("D E I N E  S O U N D S.","Y O U R  S O U N D S."),38,954,12,muted);TextAt(g,T("D E I N  M O M E N T.","Y O U R  M O M E N T."),38,973,12,muted);
-   if(!owner.sorting)TextAt(g,T("D E I N E  S O U N D B A N K","Y O U R  S O U N D B A N K"),276,87,12,muted);TextAt(g,T("Auf Knopfdruck.","Push to play."),273,112,50,ink,true);TextAt(g,$"{owner.bank*20+1:00} — {owner.bank*20+20:00}",En?603:681,127,36,C(102,116,137));
+   if(!owner.sorting)TextAt(g,T("D E I N E  S O U N D B A N K","Y O U R  S O U N D B A N K"),276,87,12,muted);DrawBankHeading(g);
    DrawReorderButton(g);
    Button(g,new(19,451,211,48),T("■   Alle Sounds stoppen","■   Stop all sounds"),()=>{owner.audio.StopSounds();owner.status.Text=T("Sounds gestoppt · Mikrofon bleibt an","Sounds stopped · microphone stays on");Invalidate();},true);
    var clip=g.Save();g.SetClip(new RectangleF(263,190,GridRight-263,675));
@@ -99,17 +99,26 @@ public sealed partial class MainForm {
    using(var shadow=new LinearGradientBrush(new RectangleF(1157,62,12,846),Color.Transparent,Color.FromArgb(100,0,0,0),0f))g.FillRectangle(shadow,1157,62,12,846);
    using(var panel=new LinearGradientBrush(new RectangleF(1169,62,367,846),C(22,30,36),C(13,20,25),90))g.FillRectangle(panel,1169,62,367,846);
    Line(g,1169,62,1169,908);
-   var selectedSlot=owner.settings.Slots[owner.selectedSound];TextAt(g,T("S O U N D - E I N S T E L L U N G E N","S O U N D   S E T T I N G S"),1194,91,12,muted);TextAt(g,"×",1491,84,25,muted,width:25);Hit(new(1484,80,36,33),owner.CloseSoundSettings,T("Sound-Einstellungen schließen","Close sound settings"));TextAt(g,$"SLOT {owner.selectedSound+1:00}",1194,122,12,muted);TextAt(g,selectedSlot.Name,1194,144,27,ink,true,270);var pencil=NamePencil(g,selectedSlot.Name);Pencil(g,pencil);Hit(pencil,owner.EditSoundName,T("Soundname bearbeiten","Edit sound name"));TrimWave(g,selectedSlot);
+   var selectedSlot=owner.settings.Slots[owner.selectedSound];TextAt(g,T("S O U N D - E I N S T E L L U N G E N","S O U N D   S E T T I N G S"),1194,91,12,muted);Box(g,new(1480,78,40,36),C(130,43,43),C(91,32,35),8,C(232,99,91));TextAt(g,"×",1491,81,27,C(255,231,225),width:25);Hit(new(1480,78,40,36),owner.CloseSoundSettings,T("Sound-Einstellungen schließen","Close sound settings"));TextAt(g,$"SLOT {owner.selectedSound+1:00}",1194,122,12,muted);TextAt(g,selectedSlot.Name,1194,144,27,ink,true,270);var pencil=NamePencil(g,selectedSlot.Name);Pencil(g,pencil);Hit(pencil,owner.EditSoundName,T("Soundname bearbeiten","Edit sound name"));TrimWave(g,selectedSlot);
    SourceRow(g,selectedSlot);
    Line(g,1194,357,1512,357);TextAt(g,T("Pegel","Level"),1194,365,19,ink);Box(g,new(1416,357,97,35),C(20,28,34),C(16,23,29),5,C(57,70,81));TextAt(g,$"{owner.selectedGain.Value:0}   %",1426,362,18,ink,width:72);TextAt(g,"▴",1494,357,12,ink);TextAt(g,"▾",1494,375,12,ink);Hit(new(1489,357,24,17),()=>owner.SetGain((float)owner.selectedGain.Value+5));Hit(new(1489,374,24,18),()=>owner.SetGain((float)owner.selectedGain.Value-5));Hit(new(1416,357,73,35),()=>EditGain());Slider(g,1200,412,306,GainPosition(owner.draftGain*100));Hit(new(1188,398,330,30),()=>owner.SetGain(GainValue((mouse.X-1200)/306)));
    TrimRow(g);
    Line(g,1194,505,1512,505);if(!string.IsNullOrEmpty(owner.editError))TextAt(g,owner.editError,1194,owner.soundEditor!=null&&owner.editorFontSize>20?174:520,owner.soundEditor!=null&&owner.editorFontSize>20?10:12,C(255,145,135),width:318,height:45);
    }
    using(var b=new SolidBrush(owner.audio.Running?green:C(116,132,148)))g.FillEllipse(b,273,944,20,20);TextAt(g,owner.audio.Running?T("Audio aktiv","Audio on"):T("Audio bereit","Audio ready"),314,940,20,owner.audio.Running?green:ink,true);TextAt(g,owner.audio.Running?T("Virtueller Eingang verbunden","Virtual input connected"):T("Zum Starten Audio aktivieren","Activate audio to start"),314,968,16,muted,width:250);
-   Line(g,573,927,573,996);TextAt(g,"◖))",617,946,25,ink);TextAt(g,T("Sound-Lautstärke","Sound volume"),665,952,15,ink);Slider(g,811,961,401,owner.settings.MasterVolume);Hit(new(799,942,426,39),()=>owner.SetMaster((mouse.X-811)/401*100));Button(g,new(1302,938,209,48),owner.audio.Running?T("⏻    Audio beenden","⏻    Stop audio"):T("⏻    Audio starten","⏻    Start audio"),owner.ToggleAudio);
+   Line(g,573,927,573,996);TextAt(g,"◖))",617,946,25,ink);TextAt(g,T("Gesamtlautstärke","Master volume"),665,952,15,ink);Slider(g,811,961,401,owner.settings.MasterVolume);Hit(new(799,942,426,39),()=>owner.SetMaster((mouse.X-811)/401*100));Button(g,new(1302,938,209,48),owner.audio.Running?T("⏻    Audio beenden","⏻    Stop audio"):T("⏻    Audio starten","⏻    Start audio"),owner.ToggleAudio);
    if(ShowStatus(owner.status.Text))TextAt(g,owner.status.Text,280,887,12,muted,width:(owner.soundPanelOpen?1163:GridRight)-505,height:18);
    DrawActionFocus(g);DrawReorder(g);
    if(owner.tourStep>=0)DrawTour(g);
+  }
+  internal RectangleF HeadingBankBounds,HeadingRangeBounds;
+  void DrawBankHeading(Graphics g){
+   var heading=T("Auf Knopfdruck.","Push to play.");using var titleFont=new Font("Segoe UI Semibold",50,FontStyle.Regular,GraphicsUnit.Pixel);float titleWidth=g.MeasureString(heading,titleFont,1000,StringFormat.GenericTypographic).Width;
+   TextAt(g,heading,273,112,50,ink,true,width:titleWidth+48);float left=273+titleWidth+52;
+   var name=string.IsNullOrWhiteSpace(owner.settings.Banks[owner.bank].Name)?"Sounds":owner.settings.Banks[owner.bank].Name;using var nameFont=new Font("Segoe UI",26,FontStyle.Regular,GraphicsUnit.Pixel);
+   float width=Math.Min(g.MeasureString(name,nameFont,1000,StringFormat.GenericTypographic).Width+8,Math.Max(100,1138-left-150));
+   HeadingBankBounds=new(left,134,width,38);HeadingRangeBounds=new(left+width+22,132,150,42);
+   TextAt(g,name,left,134,26,green,width:width,height:38);TextAt(g,$"{owner.bank*20+1:00} \u2014 {owner.bank*20+20:00}",HeadingRangeBounds.X,132,28,C(102,116,137),width:150,height:42);
   }
   static bool ShowStatus(string s)=>new[]{"fehl","erst","fail","first","not "}.Any(k=>s.Contains(k,StringComparison.OrdinalIgnoreCase))||new[]{"Sortieren:","Update:","Spielt:","Playing:","Discord","Gewählt","Selected","Fehler","Error","Kein","No "}.Any(s.StartsWith);
   static float GainPosition(float value)=>value<=60?value/120:.5f+(value-60)/680;
