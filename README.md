@@ -8,6 +8,10 @@ Windows 10/11 (64 Bit). Der Installer enthält .NET-Laufzeit, Audio-Bibliotheken
 
 Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim ersten Öffnen und erneut über ?, Schnittmarker mit Mausbedienung, Vorhören und Speichern. Android enthält eine eigene Kurzanleitung. **Updates suchen** unten links und im Infobereich lädt das neueste stabile GitHub-Release, prüft SHA-256 und öffnet den Installer. Sounds und Einstellungen bleiben erhalten.
 
+**Neu in 1.3.0:** Oben über den Sounds **Umsortieren** anklicken, einen Sound an die gewünschte Position ziehen und loslassen. Andere Sounds rücken nach; Datei, Pegel und Schnittbereich bleiben zusammen. Während des Ziehens über einer Bank links halten, um die Bank zu wechseln; am oberen/unteren Rand scrollt die Liste. Mit **Fertig** den Modus beenden. Die Handy-App übernimmt die Reihenfolge beim nächsten Abruf automatisch, auch mit einer älteren APK.
+
+Android ab 1.3.0 blendet verfügbare App-Updates oben ein. **Herunterladen** startet den Download, **Installieren** öffnet nach Prüfung von SHA-256, Paketname und Signatur die Android-Installation. Android verlangt dafür einmal die Erlaubnis „Unbekannte Apps installieren“ und bei jedem Update eine Bestätigung. Bestehende ältere APKs müssen einmal manuell aktualisiert werden, um diesen Hinweis zu erhalten.
+
 Die Soundnamen im Bild sind Beispiele. Neue Installationen enthalten **keine vorbelegten Sounds und keine Audiodateien**.
 
 Soundboard für Discord unter Windows – mit Android-App als Fernbedienung im WLAN.
@@ -59,6 +63,10 @@ TCP 47836 (Handy-Verbindung), UDP 47837 (Suche im WLAN), lokal 127.0.0.1:47835 (
 
 Stabiles Release mit Tag `vMAJOR.MINOR.PATCH` erstellen. Installer immer **SSB-Setup.exe**, Android-App **SSB-Android.apk** nennen. Windows-Assembly-Version anpassen. Der Updater verlangt die SHA-256-Prüfsumme, die GitHub für das Release-Asset liefert. Drafts und Vorabversionen werden ignoriert.
 
+Für Android zusätzlich **SSB-Android-update.json** veröffentlichen, z. B. `{"versionCode":8,"versionName":"1.3.0","sha256":"SHA256_DER_SIGNIERTEN_APK"}`. Den Android-versionCode bei jedem Android-Update erhöhen und denselben Signierschlüssel behalten. Bei reinen PC-Updates dürfen APK und Android-Metadaten gleich bleiben: das Handy bietet dann kein unnötiges Update an.
+
 ## Prüfen
 
-`--update-test`, `--trim-test`, `--tour-test`, `--ui-test`, `--design-test`, `--lan-test`, `--gain-test`, `--import-test`. `DISCORDDECK_HOME` auf einen leeren Testordner setzen und die normale App vorher beenden, da Tests dieselben Ports nutzen. JSON-Ergebnisse auf `ok` prüfen.
+`--reorder-test`, `--update-test`, `--trim-test`, `--tour-test`, `--ui-test`, `--design-test`, `--lan-test`, `--gain-test`, `--import-test`. `DISCORDDECK_HOME` auf einen leeren Testordner setzen. Testfenster starten keine normalen Server; LAN-Prüfungen verwenden TCP 47846 / UDP 47847. JSON-Ergebnisse auf `ok` prüfen. Der Reorder-Test prüft Mausbedienung, Speichern, Neustart, Fehlerfälle und die Reihenfolge über echte LAN-Abfragen.
+
+Android-Updater-Kern ohne Handy prüfen: `javac -d test-classes app/src/main/java/de/cocoa/discorddeck/UpdateInfo.java tests/UpdateInfoTest.java`, danach `java -cp test-classes de.cocoa.discorddeck.UpdateInfoTest` im Android-Ordner. Der DownloadManager und die Android-Installation müssen zusätzlich auf einem Gerät geprüft werden.

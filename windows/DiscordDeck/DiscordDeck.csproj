@@ -9,7 +9,7 @@
     <ApplicationIcon>Assets/sardine.ico</ApplicationIcon>
     <AssemblyTitle>Sardinöööses Soundboard</AssemblyTitle>
     <Product>Sardinöööses Soundboard</Product>
-    <Version>1.2.1</Version>
+    <Version>1.3.0</Version>
     <DebugType>none</DebugType>
   </PropertyGroup>
 

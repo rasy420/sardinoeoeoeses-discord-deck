@@ -2,10 +2,12 @@ using System.Text.Json;
 using static DiscordDeck.Lang;
 namespace DiscordDeck;
 static class Program {
+ internal static bool TestMode;
  [STAThread] static void Main(string[] args){
- ApplicationConfiguration.Initialize();{var di=Array.IndexOf(args,"--download-test");if(di>=0){ImportTest.Download(args[(di+1)..]).GetAwaiter().GetResult();return;}}if(args.Contains("--design-test")){DesignTest.Run();return;}if(args.Contains("--preview")){using var form=new MainForm();void Prepare(Control control){_=control.Handle;control.PerformLayout();foreach(Control child in control.Controls)Prepare(child);}Prepare(form);form.PerformLayout();using var bitmap=new Bitmap(form.Width,form.Height);form.DrawToBitmap(bitmap,form.ClientRectangle);bitmap.Save(Path.Combine(AppContext.BaseDirectory,"design-preview.png"));return;}if(args.Contains("--import-test")){ImportTest.Run().GetAwaiter().GetResult();return;}
+ TestMode=args.Any(a=>a.EndsWith("-test",StringComparison.Ordinal));ApplicationConfiguration.Initialize();{var di=Array.IndexOf(args,"--download-test");if(di>=0){ImportTest.Download(args[(di+1)..]).GetAwaiter().GetResult();return;}}if(args.Contains("--design-test")){DesignTest.Run();return;}if(args.Contains("--preview")){using var form=new MainForm();void Prepare(Control control){_=control.Handle;control.PerformLayout();foreach(Control child in control.Controls)Prepare(child);}Prepare(form);form.PerformLayout();using var bitmap=new Bitmap(form.Width,form.Height);form.DrawToBitmap(bitmap,form.ClientRectangle);bitmap.Save(Path.Combine(AppContext.BaseDirectory,"design-preview.png"));return;}if(args.Contains("--import-test")){ImportTest.Run().GetAwaiter().GetResult();return;}
  if(args.Contains("--discord-check")){var r=DiscordVoice.Read();File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"discord-check.json"),JsonSerializer.Serialize(new{discord=r,outputs=AudioEngine.Devices().Where(d=>d.Direction=="Render"&&AudioEngine.IsVirtualOutput(d.Name)).Select(d=>new{d.Name,paired=MainForm.PairedCapture(d.Id)?.name,warning=MainForm.Evaluate(d.Id)})},new JsonSerializerOptions{WriteIndented=true}));return;}
  if(args.Contains("--update-test")){UpdateTest.Run();return;}
+ if(args.Contains("--reorder-test")){MainForm.RunReorderTest();return;}
  if(args.Contains("--ui-test")){MainForm.RunUiTest();return;}
  if(args.Contains("--trim-test")){MainForm.RunTrimTest();return;}
  if(args.Contains("--tour-test")){MainForm.RunTourTest();return;}

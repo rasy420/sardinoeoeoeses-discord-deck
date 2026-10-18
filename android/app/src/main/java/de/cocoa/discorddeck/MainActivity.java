@@ -19,6 +19,7 @@ public class MainActivity extends Activity {
  final ThreadPoolExecutor commands=new ThreadPoolExecutor(1,1,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(16));
  final Map<String,Server> servers=new LinkedHashMap<>();
  final Button[] pads=new Button[100];final SeekBar[] gains=new SeekBar[100];final TextView[] gainLabels=new TextView[100];final boolean[] adjusting=new boolean[100];
+ MobileUpdater updater;
  TextView state;Spinner computers;Button pair;EditText manual;SharedPreferences prefs;
  volatile Server selected;volatile String key="",pairedId="";ScheduledFuture<?> polling;int ticks;boolean en;
  record Server(String id,String name,String host,int port){public String toString(){return name;}}
@@ -40,6 +41,7 @@ public class MainActivity extends Activity {
   header.addView(names,new LinearLayout.LayoutParams(0,-2,1));
   TextView lang=new TextView(this);android.text.SpannableString ls=new android.text.SpannableString("DE / EN");ls.setSpan(new android.text.style.ForegroundColorSpan(en?MUTED:GREEN),0,2,0);ls.setSpan(new android.text.style.ForegroundColorSpan(0xFF5A6874),3,4,0);ls.setSpan(new android.text.style.ForegroundColorSpan(en?GREEN:MUTED),5,7,0);lang.setText(ls);lang.setTextSize(13);lang.setTypeface(android.graphics.Typeface.create("sans-serif-medium",0));lang.setGravity(Gravity.CENTER);lang.setBackground(ripple(shape(CARD,STROKE,10)));lang.setContentDescription(en?"Sprache: Deutsch":"Language: English");lang.setOnClickListener(v->{prefs.edit().putString("lang",en?"de":"en").apply();recreate();});header.addView(lang,new LinearLayout.LayoutParams(dp(78),dp(38)));
   root.addView(header);
+  Button update=action("",GREEN,0,BG);update.setVisibility(View.GONE);LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,dp(48));up.setMargins(0,0,0,dp(8));root.addView(update,up);updater=new MobileUpdater(this,prefs,new MobileUpdater.Banner(){public void show(String text,boolean enabled,Runnable action){update.setText(text);update.setEnabled(enabled);update.setVisibility(View.VISIBLE);update.setOnClickListener(v->action.run());}public void hide(){update.setVisibility(View.GONE);}});
   Button help=action(t("?  Kurzanleitung","?  Quick guide"),CARD,STROKE,GREEN);help.setOnClickListener(v->guide(0));root.addView(help,new LinearLayout.LayoutParams(-1,dp(38)));
   if(!prefs.getBoolean("guideDone",false))ui.post(()->guide(0));
   state=new TextView(this);state.setText(t("PC wird im lokalen Netz gesucht …","Searching for the PC on the local network …"));state.setTextColor(MUTED);state.setTextSize(13);state.setPadding(dp(4),0,0,dp(6));root.addView(state);
@@ -56,9 +58,9 @@ public class MainActivity extends Activity {
   if(step>0)b.setNeutralButton(t("Zurück","Back"),(d,w)->guide(step-1));b.show();
  }
  CharSequence label(int slot,String name){String n=String.format(java.util.Locale.ROOT,"%02d",slot+1);android.text.SpannableString s=new android.text.SpannableString(n+"\n"+name);s.setSpan(new android.text.style.ForegroundColorSpan(MUTED),0,n.length(),0);s.setSpan(new android.text.style.RelativeSizeSpan(.85f),0,n.length(),0);return s;}
- @Override protected void onStart(){super.onStart();polling=poll.scheduleWithFixedDelay(this::tick,0,2,TimeUnit.SECONDS);}
+ @Override protected void onStart(){super.onStart();updater.resume();polling=poll.scheduleWithFixedDelay(this::tick,0,2,TimeUnit.SECONDS);}
  @Override protected void onStop(){if(polling!=null)polling.cancel(true);super.onStop();}
- @Override protected void onDestroy(){poll.shutdownNow();commands.shutdownNow();super.onDestroy();}
+ @Override protected void onDestroy(){poll.shutdownNow();commands.shutdownNow();if(updater!=null)updater.close();super.onDestroy();}
  void submit(Runnable r){try{commands.execute(r);}catch(RejectedExecutionException e){message(t("Bitte kurz warten","Please wait a moment"));}}
  void message(String text){ui.post(()->state.setText(text));}
  Server identify(String host,int port)throws Exception{JSONObject j=request(new Server("","",host,port),"/discover","GET",null,false);if(!"DiscordDeck/1".equals(j.optString("protocol")))throw new IOException(t("Unbekannter Server","Unknown server"));return new Server(j.getString("id"),j.getString("name"),host,port);}

@@ -11,14 +11,15 @@ namespace DiscordDeck;
 
 public sealed class LanServer:IDisposable {
  public const int Port=47836,DiscoveryPort=47837;
- readonly Settings settings; readonly Func<string,int,object> dispatch;readonly SynchronizationContext ui;
+ readonly int serverPort;readonly Settings settings; readonly Func<string,int,object> dispatch;readonly SynchronizationContext ui;
  readonly WebApplication web;readonly UdpClient udp;readonly CancellationTokenSource stop=new();
  readonly object gate=new();string pin="";DateTime pairingUntil;int attempts;
  public string BeginPairing(){lock(gate){pin=RandomNumberGenerator.GetInt32(100000,1000000).ToString();pairingUntil=DateTime.UtcNow.AddMinutes(2);attempts=0;return pin;}}
- public object Identity()=>new{protocol="DiscordDeck/1",id=settings.ServerId,name=Environment.MachineName,port=Port,slots=100};
- public LanServer(Settings settings,Func<string,int,object> dispatch){
+ public object Identity()=>new{protocol="DiscordDeck/1",id=settings.ServerId,name=Environment.MachineName,port=serverPort,slots=100};
+ public LanServer(Settings settings,Func<string,int,object> dispatch,int port=Port,int discoveryPort=DiscoveryPort){
+  serverPort=port;
   this.settings=settings;this.dispatch=dispatch;ui=SynchronizationContext.Current??throw new InvalidOperationException("UI context missing");
-  var builder=WebApplication.CreateSlimBuilder();builder.Logging.ClearProviders();builder.WebHost.UseUrls($"http://0.0.0.0:{Port}");web=builder.Build();
+  var builder=WebApplication.CreateSlimBuilder();builder.Logging.ClearProviders();builder.WebHost.UseUrls($"http://0.0.0.0:{port}");web=builder.Build();
   web.Use(async(ctx,next)=>{if(!IsLocal(ctx.Connection.RemoteIpAddress)){ctx.Response.StatusCode=403;return;}await next(ctx);});
   web.MapGet("/discover",()=>Identity());
   web.MapGet("/download/android",()=>{var path=Path.Combine(AppContext.BaseDirectory,"DiscordDeck-Android.apk");return File.Exists(path)?Results.File(path,"application/vnd.android.package-archive","SSB-Android.apk"):Results.NotFound();});
@@ -32,7 +33,7 @@ public sealed class LanServer:IDisposable {
   web.MapGet("/status",async(HttpContext ctx)=>Authorized(ctx)?Results.Json(await OnUi("status",0)):Results.StatusCode(403));
   web.MapPost("/play/{slot:int}",async(HttpContext ctx,int slot)=>!Authorized(ctx)?Results.StatusCode(403):slot<1||slot>100?Results.BadRequest():Results.Json(await OnUi("play",slot-1)));
   web.MapPost("/gain/{slot:int}/{percent:int}",async(HttpContext ctx,int slot,int percent)=>!Authorized(ctx)?Results.StatusCode(403):slot<1||slot>100||percent<0||percent>400?Results.BadRequest():Results.Json(await OnUi("gain",(slot-1)*401+percent)));web.MapPost("/stop",async(HttpContext ctx)=>Authorized(ctx)?Results.Json(await OnUi("stop",0)):Results.StatusCode(403));
-  udp=new UdpClient(new IPEndPoint(IPAddress.Any,DiscoveryPort));
+  udp=new UdpClient(new IPEndPoint(IPAddress.Any,discoveryPort));
   try{Task.Run(()=>web.StartAsync()).GetAwaiter().GetResult();_ = DiscoverLoop();}catch{udp.Dispose();throw;}
  }
  public static bool IsLocal(IPAddress? address){if(address==null)return false;if(address.IsIPv4MappedToIPv6)address=address.MapToIPv4();if(IPAddress.IsLoopback(address))return true;var b=address.GetAddressBytes();return b.Length==4&&(b[0]==10||b[0]==192&&b[1]==168||b[0]==172&&b[1]>=16&&b[1]<=31);}
