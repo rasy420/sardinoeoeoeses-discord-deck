@@ -35,7 +35,7 @@ public sealed partial class MainForm {
  }
  internal bool TrimDirty{get{if(PanelTrim() is not {} t)return false;var (s,e)=AudioEngine.Clip.Range(settings.Slots[selectedSound].TrimStart,settings.Slots[selectedSound].TrimEnd,t.total);return Math.Abs(s-t.from)>.004||Math.Abs(e-t.to)>.004;}}
  internal void DragTrim(bool start,double seconds){
-  if(PanelTrim() is not {} t)return;seconds=Math.Round(Math.Clamp(seconds,0,t.total),2);
+  if(PanelTrim() is not {} t)return;StopPanelPreview();seconds=Math.Round(Math.Clamp(seconds,0,t.total),2);
   if(start)trimFrom=Math.Min(seconds,trimTo-.05);else trimTo=Math.Max(seconds,trimFrom+.05);
   trimFrom=Math.Max(0,trimFrom);trimTo=Math.Min(t.total,trimTo);deck.Invalidate();
  }
