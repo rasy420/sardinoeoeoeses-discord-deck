@@ -82,11 +82,11 @@ public sealed partial class MainForm {
 
    g.DrawImage(reference,new RectangleF(40,888,140,57),new RectangleF(40,888,140,57),GraphicsUnit.Pixel);TextAt(g,T("D E I N E  S O U N D S.","Y O U R  S O U N D S."),38,954,12,muted);TextAt(g,T("D E I N  M O M E N T.","Y O U R  M O M E N T."),38,973,12,muted);
    if(!owner.sorting)TextAt(g,T("D E I N E  S O U N D B A N K","Y O U R  S O U N D B A N K"),276,87,12,muted);TextAt(g,T("Auf Knopfdruck.","Push to play."),273,112,50,ink,true);TextAt(g,$"{owner.bank*20+1:00} — {owner.bank*20+20:00}",En?603:681,127,36,C(102,116,137));
-   Button(g,new(932,76,214,31),owner.sorting?T("✓   Fertig","✓   Done"):T("↕   Umsortieren","↕   Reorder"),owner.ToggleSorting);
-   Button(g,new(932,116,214,50),T("■   Alle Sounds stoppen","■   Stop all sounds"),()=>{owner.audio.StopSounds();owner.status.Text=T("Sounds gestoppt · Mikrofon bleibt an","Sounds stopped · microphone stays on");Invalidate();},true);
+   Button(g,new(19,451,211,42),owner.sorting?T("✓   Fertig","✓   Done"):T("↕   Umsortieren","↕   Reorder"),owner.ToggleSorting);
+   Button(g,new(19,506,211,48),T("■   Alle Sounds stoppen","■   Stop all sounds"),()=>{owner.audio.StopSounds();owner.status.Text=T("Sounds gestoppt · Mikrofon bleibt an","Sounds stopped · microphone stays on");Invalidate();},true);
    var clip=g.Save();g.SetClip(new RectangleF(263,190,GridRight-263,675));
    for(int j=0;j<20;j++){int index=owner.bank*20+j;var r=TileBounds(index);float x=r.X,y=r.Y;if(y<190||y>858)continue;var slot=owner.settings.Slots[index];bool active=owner.audio.IsPlaying(slot);bool edited=owner.soundPanelOpen&&index==owner.selectedSound;
-    Box(g,r,active?C(56,48,30):C(26,34,40),active?C(34,31,24):C(18,26,31),12,active?green:edited?C(114,133,148):C(39,51,60));TextAt(g,$"{index+1:00}",x+19,y+16,17,ink);Wave(g,x+61,y+39,116,42,index,active);TextAt(g,owner.sorting?"↕":"⚙",r.Right-36,y+12,22,edited?ink:muted);TextAt(g,slot.Name,x+19,y+72,20,ink,true,r.Width-38,34);
+    Box(g,r,active?C(56,48,30):C(26,34,40),active?C(34,31,24):C(18,26,31),12,active?green:edited?C(114,133,148):C(39,51,60));TextAt(g,$"{index+1:00}",x+19,y+16,17,ink);if(File.Exists(slot.File))Wave(g,x+61,y+39,116,42,index,active);TextAt(g,owner.sorting?"↕":"⚙",r.Right-36,y+12,22,edited?ink:muted);TextAt(g,slot.Name,x+19,y+72,20,ink,true,r.Width-38,34);
     
     if(owner.sorting)continue;
     var gear=new RectangleF(r.Right-42,y+7,33,33);Hit(gear,()=>owner.OpenSoundSettings(index),T("Einstellungen: ","Settings: ")+slot.Name);Hit(r,()=>{keyboardTile=index;if(string.IsNullOrEmpty(slot.File))owner.OpenSoundSettings(index);else owner.Try(()=>owner.Play(index));},slot.Name);
@@ -113,7 +113,7 @@ public sealed partial class MainForm {
   static readonly RectangleF WaveArea=new(1193,186,319,58);
   float WaveX(double s,double total)=>WaveArea.X+(float)(WaveArea.Width*s/total);
   void TrimWave(Graphics g,SoundSlot slot){
-   if(owner.PanelTrim() is not {} t){Wave(g,1195,215,317,53,owner.selectedSound,false);TimeFields(g);return;}
+   if(owner.PanelTrim() is not {} t){TimeFields(g);return;}
    var peaks=owner.Peaks(slot.File);float mid=WaveArea.Y+WaveArea.Height/2;
    for(int i=0;i<MainForm.PeakBins;i++){float x=WaveArea.X+1.5f+i*WaveArea.Width/MainForm.PeakBins;double s=(i+.5)*t.total/MainForm.PeakBins;bool inside=s>=t.from&&s<=t.to;
     float h=peaks==null?2:Math.Max(2,peaks[i]*(WaveArea.Height-6));using var p=new Pen(inside?green:C(66,82,96),2);g.DrawLine(p,x,mid-h/2,x,mid+h/2);}
