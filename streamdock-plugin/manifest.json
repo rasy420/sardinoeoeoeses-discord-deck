@@ -1,0 +1,285 @@
+{
+    "OS":  [
+               {
+                   "MinimumVersion":  "10",
+                   "Platform":  "windows"
+               }
+           ],
+    "CategoryIcon":  "static/key.png",
+    "Description":  "Sounds ÃƒÂ¼ber dein virtuelles Mikrofon in Discord abspielen",
+    "SDKVersion":  1,
+    "Icon":  "static/key.png",
+    "Category":  "Discord Deck",
+    "Author":  "Cocoa",
+    "Name":  "Discord Deck",
+    "Software":  {
+                     "MinimumVersion":  "2.9"
+                 },
+    "Actions":  [
+                    {
+                        "Tooltip":  "Soundplatz 1 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 1",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 1",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot1",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 2 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 2",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 2",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot2",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 3 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 3",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 3",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot3",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 4 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 4",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 4",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot4",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 5 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 5",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 5",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot5",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 6 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 6",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 6",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot6",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 7 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 7",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 7",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot7",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 8 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 8",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 8",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot8",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 9 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 9",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 9",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot9",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 10 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 10",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 10",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot10",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 11 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 11",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 11",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot11",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "Tooltip":  "Soundplatz 12 aus Discord Deck abspielen",
+                        "UserTitleEnabled":  true,
+                        "States":  [
+                                       {
+                                           "Title":  "Sound 12",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "Name":  "Sound 12",
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.slot12",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ]
+                    },
+                    {
+                        "SupportedInMultiActions":  true,
+                        "UUID":  "com.cocoa.discorddeck.stop",
+                        "Controllers":  [
+                                            "Keypad"
+                                        ],
+                        "Icon":  "static/stop.png",
+                        "Name":  "Alle Sounds stoppen",
+                        "States":  [
+                                       {
+                                           "Title":  "STOPP",
+                                           "FontSize":  14,
+                                           "Image":  "static/stop.png"
+                                       }
+                                   ]
+                    },
+                    {
+                        "UUID":  "com.cocoa.discorddeck.volume",
+                        "Name":  "Soundboard-Lautstärke",
+                        "Tooltip":  "Drehen: Soundboard für dich und Discord lauter/leiser",
+                        "Icon":  "static/key.png",
+                        "Controllers":  [
+                                            "Knob"
+                                        ],
+                        "States":  [
+                                       {
+                                           "ShowTitle":  true,
+                                           "Title":  "Sounds",
+                                           "TitleAlignment":  "bottom",
+                                           "FontSize":  12,
+                                           "Image":  "static/key.png"
+                                       }
+                                   ],
+                        "SupportedInMultiActions":  false
+                    }
+                ],
+    "CodePath":  "plugin/index.html",
+    "Version":  "1.0.0"
+}

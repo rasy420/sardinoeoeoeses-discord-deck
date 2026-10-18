@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Assets/sardine.ico</ApplicationIcon>
+    <AssemblyTitle>Sardinöööses Discord Deck</AssemblyTitle>
+    <Product>Sardinöööses Discord Deck</Product>
+    <Version>1.1.0</Version>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/sardine.png" LogicalName="DiscordDeck.sardine.png" /><EmbeddedResource Include="Assets/design-reference.png" LogicalName="DiscordDeck.reference.png" /><FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+</Project>

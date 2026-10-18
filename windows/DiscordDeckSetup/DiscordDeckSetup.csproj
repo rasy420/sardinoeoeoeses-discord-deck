@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWindowsForms>true</UseWindowsForms><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  <ApplicationIcon>sardine.ico</ApplicationIcon><AssemblyTitle>Sardinöööses Discord Deck Setup</AssemblyTitle><Product>Sardinöööses Discord Deck</Product><Version>1.1.0</Version>
+  <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract><DebugType>none</DebugType>
+ </PropertyGroup>
+ <ItemGroup>
+  <EmbeddedResource Include="../DiscordDeck/release/windows-payload.zip" LogicalName="payload.zip" />
+  <EmbeddedResource Include="sardine.png" LogicalName="sardine.png" />
+ </ItemGroup>
+</Project>
