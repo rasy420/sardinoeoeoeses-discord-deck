@@ -8,6 +8,7 @@ static class Program {
  if(args.Contains("--discord-check")){var r=DiscordVoice.Read();File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"discord-check.json"),JsonSerializer.Serialize(new{discord=r,outputs=AudioEngine.Devices().Where(d=>d.Direction=="Render"&&AudioEngine.IsVirtualOutput(d.Name)).Select(d=>new{d.Name,paired=MainForm.PairedCapture(d.Id)?.name,warning=MainForm.Evaluate(d.Id)})},new JsonSerializerOptions{WriteIndented=true}));return;}
  if(args.Contains("--import-ui-test")){MainForm.RunImportUiTest();return;}
  if(args.Contains("--overlay-test")){MainForm.RunOverlayTest();return;}
+if(args.Contains("--tile-stop-test")){MainForm.RunTileStopTest();return;}
  if(args.Contains("--mobile-stop-test")){MainForm.RunMobileStopTest(args.Contains("--fixture"));return;}
  if(args.Contains("--bank-test")){MainForm.RunBankTest();return;}if(args.Contains("--layout-test")){MainForm.RunLayoutTest();return;}if(args.Contains("--mega-test")){MainForm.RunMegaTest();return;}if(args.Contains("--update-test")){UpdateTest.Run();return;}
  if(args.Contains("--reorder-test")){MainForm.RunReorderTest();return;}
