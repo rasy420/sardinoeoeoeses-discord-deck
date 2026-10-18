@@ -46,7 +46,7 @@ public sealed partial class MainForm {
    using var client=Updater.Client();var folder=Path.Combine(Path.GetTempPath(),"SSB-Update",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);var path=Path.Combine(folder,"SSB-Setup.exe");
    using(var response=await client.GetAsync(release.Url,HttpCompletionOption.ResponseHeadersRead)){response.EnsureSuccessStatusCode();await using var file=File.Create(path);await response.Content.CopyToAsync(file);}
    if(!Updater.Matches(path,release.Digest)){File.Delete(path);throw new InvalidDataException(T("Prüfsumme stimmt nicht. Update verworfen.","Checksum mismatch. Update discarded."));}
-   Process.Start(new ProcessStartInfo(path){UseShellExecute=true});status.Text="Update: "+T("Update-Installer geöffnet","Update installer opened");
+   Process.Start(new ProcessStartInfo(path){UseShellExecute=true,WorkingDirectory=folder});status.Text="Update: "+T("Update-Installer geöffnet","Update installer opened");
   }catch(Exception e){status.Text="Update: "+T("Update fehlgeschlagen: ","Update failed: ")+e.Message;}
   finally{updating=false;if(!IsDisposed)deck.Invalidate();}
  }

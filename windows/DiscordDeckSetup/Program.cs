@@ -8,7 +8,7 @@ using System.Text.Json;
 using Microsoft.Win32;
 
 static class Program {
- const string AppName="Sardinöööses Soundboard",Version="1.4.0";
+ const string AppName="Sardinöööses Soundboard",Version="1.4.1";
  static readonly Color Bg=Color.FromArgb(13,20,26),Card=Color.FromArgb(20,28,35),Stroke=Color.FromArgb(38,49,58),Gold=Color.FromArgb(232,200,122),Fg=Color.FromArgb(241,244,246),Muted=Color.FromArgb(139,151,161),Red=Color.FromArgb(240,96,90);
  // Setup-Sprache folgt der Windows-Sprache: Deutsch auf deutschem Windows, sonst Englisch. SSB_LANG=de|en erzwingt eine.
  public static readonly bool De=Environment.GetEnvironmentVariable("SSB_LANG")!="en";
@@ -18,6 +18,8 @@ static class Program {
  static string Root=>TestRoot??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"DiscordDeck");
 
  [STAThread] static void Main(string[] args){
+  // An updater launched from App inherits that directory. Release our own directory handle before swapping it.
+  Environment.CurrentDirectory=Path.GetTempPath();
   ApplicationConfiguration.Initialize();
   if(args.Contains("--install")){
    try{Install(_=>{},launch:false);if(TestRoot==null&&Cable.Find()==null){var note=CableStep(_=>{});if(note.StartsWith("!"))throw new IOException(note[1..]);}if(!args.Contains("--no-launch"))Launch();File.WriteAllText(Path.Combine(Root,"install-result.txt"),"Installed successfully "+Version);}
@@ -81,7 +83,7 @@ static class Program {
      done=true;install.Text=L("Schließen","Close");install.Enabled=true;cancel.Visible=false;
      if(note!=null&&note.StartsWith("!")){status.ForeColor=Red;status.Text=L("Soundboard installiert und gestartet. ","Soundboard installed and started. ")+note[1..];}
      else{status.ForeColor=Gold;status.Text=L("Fertig! Das Soundboard läuft jetzt (Symbol unten rechts im Infobereich).\n","Done! The soundboard is now running (icon in the bottom-right tray).\n")+(note??L("Verknüpfung auf dem Desktop und im Startmenü angelegt.","Shortcuts added to the desktop and Start menu."));}
-    }catch(Exception e){status.ForeColor=Red;status.Text=L("Installation fehlgeschlagen: ","Installation failed: ")+e.Message;install.Text=L("Erneut versuchen","Try again");install.Enabled=cancel.Enabled=true;}
+    }catch(Exception e){try{File.AppendAllText(Path.Combine(Root,"setup-error.log"),DateTime.Now.ToString("O")+" "+e+Environment.NewLine);}catch{}status.ForeColor=Red;status.Text=L("Installation fehlgeschlagen: ","Installation failed: ")+e.Message;install.Text=L("Erneut versuchen","Try again");install.Enabled=cancel.Enabled=true;}
    };
    Controls.AddRange(new Control[]{fish,title,sub,features,cableCard,status,progress,install,cancel});
    Load+=(_,_)=>{sub.Left=title.Left+4;sub.Top=title.Bottom-2;fish.Top=title.Top+(sub.Bottom-title.Top-fish.Height)/2;};
