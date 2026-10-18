@@ -22,7 +22,7 @@ public sealed partial class MainForm {
    void Key(Keys key){Event(form.soundEditor!,"OnKeyDown",new KeyEventArgs(key));}
    void Decision(DialogResult result,Action action){using var timer=new System.Windows.Forms.Timer{Interval=30};timer.Tick+=(_,_)=>{var d=Application.OpenForms.Cast<Form>().FirstOrDefault(x=>x!=form&&x is not MainForm);if(d!=null){d.DialogResult=result;d.Close();}};timer.Start();action();timer.Stop();}
    Check(!f.soundPanelOpen&&f.deck.Columns==4,"Startup closes sidebar and releases grid width");Shot("mega-closed");
-   f.OpenSoundSettings(0);Check(f.soundPanelOpen&&f.selectedSound==0&&f.deck.Columns==3,"Gear opens correct editing slot");Check(f.audio.Playing==0,"Opening settings does not play audio");
+   f.OpenSoundSettings(0);Check(f.soundPanelOpen&&f.selectedSound==0&&f.deck.Columns==4,"Gear opens correct editing slot without reflow");Check(f.audio.Playing==0,"Opening settings does not play audio");
    f.DragTrim(true,.123456);f.SetGain(235);Check(slot.TrimStart==.1&&slot.Volume==.7f,"Trim and gain remain drafts");Check(f.TrimDirty,"Draft gain and trim marked dirty");f.OpenSoundSettings(0);Check(Math.Abs(f.PanelTrim()!.Value.from-.123456)<1e-8&&f.draftGain==2.35f,"Same gear preserves precise draft");
    Decision(DialogResult.Cancel,()=>f.OpenSoundSettings(1));Check(f.selectedSound==0&&f.TrimDirty,"Cancel switch preserves editing draft");
    Decision(DialogResult.Yes,()=>f.OpenSoundSettings(1));Check(f.selectedSound==1&&slot.TrimStart==.123456&&slot.Volume==2.35f,"Save before switch persists trim and gain");

@@ -18,9 +18,12 @@ public sealed partial class MainForm {
   if(soundPanelOpen&&!ResolveDraft())return;
   soundEditor?.Dispose();soundEditor=null;draftInvalid=false;editError="";SelectEdited(index);deck.ClampScroll();
  }
+ internal bool DismissSoundSettings(){
+  if(soundPanelOpen&&(TrimDirty||draftInvalid)){editError=draftInvalid?T("Bitte zuerst die markierte Eingabe korrigieren und speichern.","Please correct the marked value and save first."):T("Bitte die Änderungen zuerst mit Speichern übernehmen.","Please save your changes first.");status.Text=T("Fehler: ","Error: ")+editError;deck.Invalidate();return false;}
+  if(soundPanelOpen)CloseSoundSettings();return !soundPanelOpen;
+ }
  internal void ActivateTile(int index){
-  if(soundPanelOpen&&(TrimDirty||draftInvalid)){editError=draftInvalid?T("Bitte zuerst die markierte Eingabe korrigieren und speichern.","Please correct the marked value and save first."):T("Bitte die Änderungen zuerst mit Speichern übernehmen.","Please save your changes before playing another tile.");status.Text=T("Fehler: ","Error: ")+editError;deck.Invalidate();return;}
-  if(soundPanelOpen)CloseSoundSettings();if(soundPanelOpen)return;
+  if(!DismissSoundSettings())return;
   if(string.IsNullOrEmpty(settings.Slots[index].File))OpenSoundSettings(index);else Play(index);
  }
  internal void CloseSoundSettings(){if(!ResolveDraft())return;soundEditor?.Dispose();soundEditor=null;StopPanelPreview();soundPanelOpen=false;deck.ClampScroll();deck.Focus();deck.Invalidate();}

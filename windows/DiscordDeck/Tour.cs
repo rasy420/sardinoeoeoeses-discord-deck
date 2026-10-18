@@ -18,7 +18,7 @@ public sealed partial class MainForm {
   new(T("Anleitung und Sprache","Guide and language"),T("Über „?“ öffnest du diese Tour wieder, mit DE / EN stellst du die Sprache um. Viel Spaß!","“?” reopens this tour, DE / EN switches the language. Have fun!"),new RectangleF[]{new(922,7,106,47)}),
  };
  bool panelBeforeTour;int bankBeforeTour,scrollBeforeTour;
- void PrepareTourStep(){if(tourStep>=2&&tourStep<=4){if(!soundPanelOpen)SelectEdited(selectedSound);bank=selectedSound/20;scrollRow=Math.Clamp((selectedSound%20)/3-4,0,deck.MaxScroll);}else if(!panelBeforeTour)soundPanelOpen=false;deck.ClampScroll();}
+ void PrepareTourStep(){if(tourStep>=2&&tourStep<=4){if(tourStep==2)soundPanelOpen=false;else if(!soundPanelOpen)SelectEdited(selectedSound);bank=selectedSound/20;scrollRow=0;}else if(!panelBeforeTour)soundPanelOpen=false;deck.ClampScroll();}
  internal void StartTour(){panelBeforeTour=soundPanelOpen;bankBeforeTour=bank;scrollBeforeTour=scrollRow;tourStep=0;Show();WindowState=FormWindowState.Normal;Activate();deck.Focus();deck.Invalidate();}
  internal void TourNext(){if(tourStep<0)return;if(tourStep>=TourSteps().Length-1)EndTour();else{tourStep++;PrepareTourStep();deck.Invalidate();}}
  internal void TourBack(){if(tourStep>0){tourStep--;PrepareTourStep();deck.Invalidate();}}

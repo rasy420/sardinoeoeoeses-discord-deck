@@ -24,12 +24,12 @@ public sealed partial class MainForm {
   int reorderFrom=-1,reorderOver=-1;PointF reorderDown;bool reorderMoved;
   int hoveredBank=-1;DateTime hoverSince,lastScroll;
   readonly System.Windows.Forms.Timer reorderTimer=new(){Interval=100};
-  internal int Columns=>owner.soundPanelOpen?3:4;
-  internal float GridRight=>owner.soundPanelOpen?1158:1524;
+  internal int Columns=>4;
+  internal float GridRight=>1524;
   internal int MaxScroll=>Math.Max(0,(int)Math.Ceiling(20d/Columns)-5);
   internal RectangleF TileBounds(int index){int j=index-owner.bank*20;float step=(GridRight-273)/Columns;return new(273+j%Columns*step,195+(j/Columns-owner.scrollRow)*135.5f,step-13,120);}
   internal int TileAt(PointF p){
-   if(!new RectangleF(263,190,GridRight-263,675).Contains(p))return -1;
+   if(owner.soundPanelOpen&&p.X>=1169||!new RectangleF(263,190,GridRight-263,675).Contains(p))return -1;
    for(int j=0;j<20;j++){int index=owner.bank*20+j;var r=TileBounds(index);if(r.Y>=190&&r.Y<=858&&r.Contains(p))return index;}return -1;
   }
   void InitReorder(){reorderTimer.Tick+=(_,_)=>ReorderTick(DateTime.UtcNow);}
