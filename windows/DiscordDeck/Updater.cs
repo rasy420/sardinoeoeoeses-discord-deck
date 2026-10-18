@@ -32,16 +32,16 @@ public sealed partial class MainForm {
  async void CheckForUpdates(){
   if(updating)return;updating=true;
   try{
-   status.Text=T("Suche nach Updates …","Checking for updates …");deck.Invalidate();
+   status.Text="Update: "+T("Suche nach Updates …","Checking for updates …");deck.Invalidate();
    using var client=Updater.Client();var json=await client.GetStringAsync("https://api.github.com/repos/"+Updater.Repository+"/releases/latest");var release=Updater.Parse(json);
-   if(release==null||release.Version<=Updater.Current){status.Text=T("Du nutzt die neueste Version: ","You are using the latest version: ")+Updater.Current.ToString(3);return;}
-   if(MessageBox.Show(this,T($"Version {release.Version} ist verfügbar. Jetzt herunterladen und installieren? Sounds und Einstellungen bleiben erhalten.",$"Version {release.Version} is available. Download and install now? Your sounds and settings are kept."),T("Update verfügbar","Update available"),MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes){status.Text=T("Update abgebrochen","Update cancelled");return;}
-   status.Text=T("Update wird heruntergeladen …","Downloading update …");
+   if(release==null||release.Version<=Updater.Current){status.Text="Update: "+T("Du nutzt die neueste Version: ","You are using the latest version: ")+Updater.Current.ToString(3);return;}
+   if(MessageBox.Show(this,T($"Version {release.Version} ist verfügbar. Jetzt herunterladen und installieren? Sounds und Einstellungen bleiben erhalten.",$"Version {release.Version} is available. Download and install now? Your sounds and settings are kept."),T("Update verfügbar","Update available"),MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes){status.Text="Update: "+T("Update abgebrochen","Update cancelled");return;}
+   status.Text="Update: "+T("Update wird heruntergeladen …","Downloading update …");
    var folder=Path.Combine(Path.GetTempPath(),"SSB-Update",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);var path=Path.Combine(folder,"SSB-Setup.exe");
    using(var response=await client.GetAsync(release.Url,HttpCompletionOption.ResponseHeadersRead)){response.EnsureSuccessStatusCode();await using var file=File.Create(path);await response.Content.CopyToAsync(file);}
    if(!Updater.Matches(path,release.Digest)){File.Delete(path);throw new InvalidDataException(T("Prüfsumme stimmt nicht. Update verworfen.","Checksum mismatch. Update discarded."));}
-   Process.Start(new ProcessStartInfo(path){UseShellExecute=true});status.Text=T("Update-Installer geöffnet","Update installer opened");
-  }catch(Exception e){status.Text=T("Update fehlgeschlagen: ","Update failed: ")+e.Message;}
+   Process.Start(new ProcessStartInfo(path){UseShellExecute=true});status.Text="Update: "+T("Update-Installer geöffnet","Update installer opened");
+  }catch(Exception e){status.Text="Update: "+T("Update fehlgeschlagen: ","Update failed: ")+e.Message;}
   finally{updating=false;if(!IsDisposed)deck.Invalidate();}
  }
 }

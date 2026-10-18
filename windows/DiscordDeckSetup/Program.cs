@@ -8,7 +8,7 @@ using System.Text.Json;
 using Microsoft.Win32;
 
 static class Program {
- const string AppName="Sardinöööses Soundboard",Version="1.2.0";
+ const string AppName="Sardinöööses Soundboard",Version="1.2.1";
  static readonly Color Bg=Color.FromArgb(13,20,26),Card=Color.FromArgb(20,28,35),Stroke=Color.FromArgb(38,49,58),Gold=Color.FromArgb(232,200,122),Fg=Color.FromArgb(241,244,246),Muted=Color.FromArgb(139,151,161),Red=Color.FromArgb(240,96,90);
  // Setup-Sprache folgt der Windows-Sprache: Deutsch auf deutschem Windows, sonst Englisch. SSB_LANG=de|en erzwingt eine.
  public static readonly bool De=Environment.GetEnvironmentVariable("SSB_LANG")!="en";

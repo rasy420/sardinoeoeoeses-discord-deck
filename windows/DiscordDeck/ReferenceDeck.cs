@@ -87,7 +87,7 @@ public sealed partial class MainForm {
    if(ShowStatus(owner.status.Text))TextAt(g,owner.status.Text,280,887,12,muted,width:850,height:18);
    if(owner.tourStep>=0)DrawTour(g);
   }
-  static bool ShowStatus(string s)=>new[]{"fehl","erst","fail","first","not "}.Any(k=>s.Contains(k,StringComparison.OrdinalIgnoreCase))||new[]{"Spielt:","Playing:","Discord","Gewählt","Selected","Fehler","Error","Kein","No "}.Any(s.StartsWith);
+  static bool ShowStatus(string s)=>new[]{"fehl","erst","fail","first","not "}.Any(k=>s.Contains(k,StringComparison.OrdinalIgnoreCase))||new[]{"Update:","Spielt:","Playing:","Discord","Gewählt","Selected","Fehler","Error","Kein","No "}.Any(s.StartsWith);
   static float GainPosition(float value)=>value<=60?value/120:.5f+(value-60)/680;
   static float GainValue(float position)=>position<=.5f?position*120:60+(position-.5f)*680;
   // Wellenform rechts mit zwei ziehbaren Markern (Start/Ende) und Abspielposition beim Vorhören.

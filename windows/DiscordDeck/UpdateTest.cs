@@ -11,6 +11,10 @@ internal static class UpdateTest {
   Check(Updater.Parse(Fixture(draft:true))==null,"Draft ignored");Check(Updater.Parse(Fixture(pre:true))==null,"Prerelease ignored");
   Reject(Fixture(host:"example.com"),"External download rejected");Reject(Fixture(digest:""),"Missing checksum rejected");Reject(Fixture(tag:"bad"),"Invalid version rejected");Reject(Fixture(name:"other.exe"),"Missing installer rejected");Reject("{}","Malformed response rejected");
   var path=Path.GetTempFileName();try{File.WriteAllText(path,"test installer");var hash=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));Check(Updater.Matches(path,hash),"Correct SHA256 accepted");File.AppendAllText(path,"tampered");Check(!Updater.Matches(path,hash),"Tampered download rejected");}finally{File.Delete(path);}
+  var deck=typeof(MainForm).GetNestedType("ReferenceDeck",System.Reflection.BindingFlags.NonPublic)!;
+  var visible=deck.GetMethod("ShowStatus",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)!;
+  Check((bool)visible.Invoke(null,new object[]{"Update: Du nutzt die neueste Version: 1.2.1"})!,"German update result visible");
+  Check((bool)visible.Invoke(null,new object[]{"Update: You are using the latest version: 1.2.1"})!,"English update result visible");
   File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"update-test.json"),JsonSerializer.Serialize(new{ok=true,log},new JsonSerializerOptions{WriteIndented=true}));
  }
 }
