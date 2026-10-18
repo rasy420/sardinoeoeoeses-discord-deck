@@ -102,7 +102,7 @@ static class Program {
  }
 
  static void ValidateInstalledTools(string app){foreach(var tool in new[]{"ffmpeg","ffprobe","yt-dlp","deno"}){var path=Path.Combine(app,"tools",tool+".exe");if(!File.Exists(path)||new FileInfo(path).Length<1024)throw new IOException(L("Import-Komponente fehlt im Installationspaket: ","Import component missing from installation package: ")+tool);using var p=Process.Start(new ProcessStartInfo(path,tool.StartsWith("ff")?"-version":"--version"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true})??throw new IOException(tool);var stdout=p.StandardOutput.ReadToEndAsync();var stderr=p.StandardError.ReadToEndAsync();if(!p.WaitForExit(20000)){p.Kill(true);throw new IOException(L("Komponente reagiert nicht: ","Component did not respond: ")+tool);}if(p.ExitCode!=0)throw new IOException(L("Komponente startet nicht: ","Component did not start: ")+tool);Task.WaitAll(stdout,stderr);}}
- static void Launch(){var app=Path.Combine(Root,"App");Process.Start(new ProcessStartInfo(Path.Combine(app,"DiscordDeck.exe"),"--tray"){UseShellExecute=true,WorkingDirectory=app});}
+ static void Launch(){var app=Path.Combine(Root,"App");Process.Start(new ProcessStartInfo(Path.Combine(app,"DiscordDeck.exe")){UseShellExecute=true,WorkingDirectory=app});}
 
  sealed class FlatButton:Button{
   public FlatButton(string text,Color back,Color fore){Text=text;BackColor=back;ForeColor=fore;FlatStyle=FlatStyle.Flat;FlatAppearance.BorderColor=back==Card?Stroke:back;FlatAppearance.BorderSize=1;FlatAppearance.MouseOverBackColor=ControlPaint.Light(back,.15f);Font=new Font("Segoe UI Semibold",10.5f);Cursor=Cursors.Hand;}
@@ -153,7 +153,7 @@ static class Program {
    report((88,L("Handy-Freigabe im lokalen Netzwerk …","Allowing the phone on your local network …")));
    if(!FirewallReady(exe))ConfigureFirewall(root,app);
   }
-  if(launch){report((98,L("Soundboard wird gestartet …","Starting the soundboard …")));Process.Start(new ProcessStartInfo(exe,"--tray"){UseShellExecute=true,WorkingDirectory=app});}
+  if(launch){report((98,L("Soundboard wird gestartet …","Starting the soundboard …")));Process.Start(new ProcessStartInfo(exe){UseShellExecute=true,WorkingDirectory=app});}
   report((89,L("Programm installiert","Program installed")));
  }
 
