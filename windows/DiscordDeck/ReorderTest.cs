@@ -4,13 +4,13 @@ using NAudio.Wave;
 namespace DiscordDeck;
 public sealed partial class MainForm {
  public static void RunReorderTest(){
-  var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);}
+  var checks=new List<string>();void Check(bool ok,string name){if(!ok)throw new Exception(name);checks.Add(name);File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"reorder-progress.txt"),name);}
   Directory.CreateDirectory(Settings.Folder);var wave=Path.Combine(Settings.Folder,"Reorder.wav");
   using(var writer=new WaveFileWriter(wave,WaveFormat.CreateIeeeFloatWaveFormat(44100,1))){var samples=new float[44100];for(int i=0;i<samples.Length;i++)samples[i]=.02f*(float)Math.Sin(i*2*Math.PI*440/44100);writer.WriteSamples(samples,0,samples.Length);}
   var initial=new Settings{TourDone=true,AudioEnabled=false,MixMicrophone=false,MonitorEnabled=false};
   for(int i=0;i<100;i++)initial.Slots[i]=new SoundSlot{Name=$"Sample {i+1}",File=wave,SourceUrl=$"https://example.test/{i+1}",Volume=(i+1)/100f,TrimStart=.1,TrimEnd=.7};initial.Save();
   AutoTour=false;using var form=new MainForm();
-  void Prepare(Control c){_=c.Handle;foreach(Control child in c.Controls)Prepare(child);}Prepare(form);form.PerformLayout();
+  void Prepare(Control c){_=c.Handle;foreach(Control child in c.Controls)Prepare(child);}Prepare(form);form.PerformLayout();form.SelectSound(0);
   var flags=BindingFlags.NonPublic|BindingFlags.Instance;
   void Paint(string? file=null){using var b=new Bitmap(form.deck.Width,form.deck.Height);form.deck.DrawToBitmap(b,form.deck.ClientRectangle);if(file!=null)b.Save(Path.Combine(AppContext.BaseDirectory,file));}
   void Event(string method,int x,int y,MouseButtons button=MouseButtons.Left)=>form.deck.GetType().GetMethod(method,flags)!.Invoke(form.deck,new object[]{new MouseEventArgs(button,1,x,y,0)});

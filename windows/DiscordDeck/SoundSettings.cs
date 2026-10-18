@@ -18,19 +18,20 @@ public sealed partial class MainForm {
  }
  internal void ReplaceSoundSource(SoundSlot slot,string file,string suggestedName,string source){
   using(var probe=new AudioFileReader(file))if(probe.TotalTime<=TimeSpan.Zero)throw new IOException(T("Audiodatei ist leer.","Audio file is empty."));
+  if(!settings.Slots.Any(s=>s.Id==slot.Id))throw new InvalidOperationException("Slot no longer exists");
   var before=(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd);
   slot.File=file;slot.SourceUrl=source;slot.TrimStart=slot.TrimEnd=0;if(!slot.CustomName)slot.Name=suggestedName;
   try{settings.Save();}catch{(slot.File,slot.Name,slot.SourceUrl,slot.TrimStart,slot.TrimEnd)=before;throw;}
-  if(ReferenceEquals(slot,settings.Slots[selectedSound])){ForgetTrim();SyncSelected();}deck.Invalidate();
+  audio.StopSlot(slot);durations.Remove(file);peaks.Remove(file);if(ReferenceEquals(slot,settings.Slots[selectedSound])){ForgetTrim();draftGain=slot.Volume;SyncSelected();}deck.Invalidate();
  }
  internal void EditSoundName(){
   var slot=settings.Slots[selectedSound];BeginSoundEdit(new(1194,143,269,35),slot.Name,text=>RenameSound(slot,text),27,"Bahnschrift SemiCondensed");
  }
  internal void EditPanelTime(bool start){
   if(PanelTrim() is not {} trim)return;var slot=settings.Slots[selectedSound];
-  BeginSoundEdit(start?new(1232,252,49,22):new(1352,252,49,22),Seconds(start?trim.from:trim.to),text=>{
+  BeginSoundEdit(start?new(1241,257,76,22):new(1424,257,63,22),Seconds(start?trim.from:trim.to),text=>{
    if(!double.TryParse(text.Trim().Replace(',','.'),NumberStyles.Float,CultureInfo.InvariantCulture,out double value)||!double.IsFinite(value))throw new ArgumentException(T("Bitte eine gültige Sekundenangabe eingeben.","Please enter a valid time in seconds."));
-   if(ReferenceEquals(slot,settings.Slots[selectedSound]))DragTrim(start,value);
+   if(ReferenceEquals(slot,settings.Slots[selectedSound])){if(value<0||value>trim.total||(start?value>=trim.to:value<=trim.from))throw new ArgumentException(T("0 ≤ Start < Ende ≤ Audiodauer erforderlich.","Required: 0 ≤ start < end ≤ duration."));StopPanelPreview();if(start)trimFrom=value;else trimTo=value;draftInvalid=false;editError="";deck.Invalidate();}
   },13,"Segoe UI");
  }
  void BeginSoundEdit(RectangleF logical,string text,Action<string> commit,float size,string family){
@@ -39,11 +40,11 @@ public sealed partial class MainForm {
   soundEditor=editor;editorLogical=logical;editorFontSize=size;editorFontFamily=family;editor.Parent=deck;LayoutSoundEditor();bool closing=false;
   void Close(bool save,bool keepInvalid){
    if(closing)return;
-   if(save)try{commit(editor.Text);}catch(Exception e){status.Text=T("Fehler: ","Error: ")+e.Message;deck.Invalidate();if(keepInvalid){editor.SelectAll();return;}}
+   if(save)try{commit(editor.Text);editError="";draftInvalid=false;}catch(Exception e){editError=e.Message;draftInvalid=size<20;status.Text=T("Fehler: ","Error: ")+e.Message;editor.BackColor=Color.FromArgb(77,32,32);deck.Invalidate();if(keepInvalid){editor.SelectAll();return;}return;}
    closing=true;soundEditor=null;var font=editor.Font;editor.Dispose();font.Dispose();deck.Invalidate();
   }
-  editor.KeyDown+=(_,e)=>{if(e.KeyCode==Keys.Enter){e.SuppressKeyPress=true;Close(true,true);if(soundEditor==null)deck.Focus();}else if(e.KeyCode==Keys.Escape){e.SuppressKeyPress=true;Close(false,false);deck.Focus();}};
-  editor.Leave+=(_,_)=>Close(true,false);editor.Focus();editor.SelectAll();
+  editor.KeyDown+=(_,e)=>{if(e.KeyCode==Keys.Enter){e.SuppressKeyPress=true;Close(true,true);if(soundEditor==null)deck.Focus();}else if(e.KeyCode==Keys.Escape){e.SuppressKeyPress=true;draftInvalid=false;editError="";Close(false,false);deck.Focus();}};
+  editor.TextChanged+=(_,_)=>{if(size<20){draftInvalid=true;deck.Invalidate();}};editor.Leave+=(_,_)=>Close(true,false);editor.Focus();editor.SelectAll();
  }
 
  sealed partial class ReferenceDeck {
@@ -63,27 +64,32 @@ public sealed partial class MainForm {
    foreach(ToolStripItem item in replaceMenu.Items)item.Padding=new Padding(4,4,8,4);
    return replaceMenu;
   }
-  internal void OpenReplaceMenu(){PrepareReplaceMenu().Show(this,new Point((int)(1374*Width/1536f),(int)(328*Height/1024f)));}
+  internal void OpenReplaceMenu(){if(owner.importing)return;var menu=PrepareReplaceMenu();var sz=menu.GetPreferredSize(Size.Empty);int x=Math.Min((int)(1194*Width/1536f),Width-sz.Width-8),y=(int)(366*Height/1024f);if(y+sz.Height>Height)y=(int)(328*Height/1024f)-sz.Height;menu.Show(this,new Point(Math.Max(8,x),Math.Max(8,y)));}
   internal RectangleF NamePencil(Graphics g,string name){using var font=new Font("Bahnschrift SemiCondensed",27,FontStyle.Regular,GraphicsUnit.Pixel);float width=Math.Min(259,g.MeasureString(name,font,1000,StringFormat.GenericTypographic).Width);return new(1194+width+11,145,25,28);}
   void Pencil(Graphics g,RectangleF r){using var pen=new Pen(muted,1.5f){LineJoin=LineJoin.Round};float x=r.X+3,y=r.Y+4;g.DrawPolygon(pen,new[]{new PointF(x,y+19),new PointF(x+3,y+11),new PointF(x+15,y-1),new PointF(x+20,y+4),new PointF(x+8,y+16)});g.DrawLine(pen,x+3,y+11,x+8,y+16);g.DrawLine(pen,x+12,y+2,x+17,y+7);}
+  readonly ToolTip sourceTip=new();
+  string sourceTipText="";
   void SourceRow(Graphics g,SoundSlot slot){
-   TextAt(g,T("Q U E L L E","S O U R C E"),1194,295,12,muted);
-   TextAt(g,string.IsNullOrEmpty(slot.File)?T("Noch keine Datei","No file yet"):Path.GetFileName(slot.File),1194,315,15,ink,width:170,height:24);
-   var r=new RectangleF(1374,290,140,38);Box(g,r,C(36,46,54),C(26,35,42),8,C(79,96,108));TextAt(g,T("Sound ersetzen","Replace sound"),r.X+13,r.Y+10,14,ink,width:110,height:24);
-   using var p=new Pen(muted,1.7f){StartCap=LineCap.Round,EndCap=LineCap.Round};g.DrawLines(p,new[]{new PointF(r.Right-23,r.Y+16),new PointF(r.Right-18,r.Y+21),new PointF(r.Right-13,r.Y+16)});Hit(r,OpenReplaceMenu);
+   TextAt(g,T("Q U E L L E","S O U R C E"),1194,301,12,muted);
+   var source=string.IsNullOrEmpty(slot.SourceUrl)?Path.GetFileName(slot.File):slot.SourceUrl;
+   TextAt(g,string.IsNullOrEmpty(source)?T("Noch keine Datei","No file yet"):source,1194,321,15,ink,width:141,height:28);
+   var r=new RectangleF(1340,311,130,38);Box(g,r,C(36,46,54),C(26,35,42),8,C(79,96,108));TextAt(g,owner.importing?T("Lädt …","Loading …"):T("Sound ersetzen","Replace sound"),r.X+10,r.Y+11,12.5f,ink,width:104,height:22);
+   using var p=new Pen(muted,1.7f){StartCap=LineCap.Round,EndCap=LineCap.Round};g.DrawLines(p,new[]{new PointF(r.Right-17,r.Y+16),new PointF(r.Right-12,r.Y+21),new PointF(r.Right-7,r.Y+16)});if(!owner.importing)Hit(r,OpenReplaceMenu,T("Sound ersetzen","Replace sound"));
+   var trash=new RectangleF(1476,311,38,38);bool enabled=!string.IsNullOrEmpty(slot.File)&&!owner.importing;bool over=trash.Contains(mouse);Box(g,trash,C(28,36,42),C(22,29,35),8,enabled&&over?C(214,100,92):C(64,77,87));using var tp=new Pen(enabled?(over?C(255,145,135):muted):C(70,83,94),1.5f);g.DrawRectangle(tp,1487,324,15,16);g.DrawLine(tp,1485,320,1504,320);g.DrawLine(tp,1491,317,1498,317);g.DrawLine(tp,1492,327,1492,337);g.DrawLine(tp,1497,327,1497,337);if(enabled)Hit(trash,owner.ConfirmRemoveSound,T("Sound aus Slot entfernen","Remove sound from slot"));
+   var tip=trash.Contains(mouse)?T("Sound aus Slot entfernen","Remove sound from slot"):new RectangleF(1194,301,141,50).Contains(mouse)?source:"";if(tip!=sourceTipText){sourceTipText=tip;sourceTip.SetToolTip(this,tip);}
   }
   void TimeFields(Graphics g){
    var trim=owner.PanelTrim();var color=trim.HasValue?ink:C(105,120,131);
-   TextAt(g,"Start",1194,257,13,muted,width:34,height:22);TextAt(g,T("Ende","End"),1314,257,13,muted,width:34,height:22);
+   TextAt(g,"Start",1194,262,13,muted,width:34,height:22);TextAt(g,T("Ende","End"),1370,262,13,muted,width:34,height:22);
    void Field(RectangleF r,bool start,double seconds){
-    var text=trim.HasValue?Seconds(seconds)+" s":"–";using var measure=new Font("Segoe UI",13,FontStyle.Regular,GraphicsUnit.Pixel);float fontSize=Math.Clamp(13*49/Math.Max(49,g.MeasureString(text,measure,1000,StringFormat.GenericTypographic).Width+3),9,13);
-    Box(g,r,C(29,38,45),C(22,30,36),6,C(58,73,84));TextAt(g,text,r.X+8,r.Y+6+(13-fontSize)/2,fontSize,color,width:49,height:20);
+    var text=trim.HasValue?Seconds(seconds)+" s":"–";using var measure=new Font("Segoe UI",13,FontStyle.Regular,GraphicsUnit.Pixel);float fontSize=Math.Clamp(13*(r.Width-25)/Math.Max(r.Width-25,g.MeasureString(text,measure,1000,StringFormat.GenericTypographic).Width+3),9,13);
+    Box(g,r,C(29,38,45),C(22,30,36),6,C(58,73,84));TextAt(g,text,r.X+8,r.Y+6+(13-fontSize)/2,fontSize,color,width:r.Width-25,height:20);
     using(var b=new SolidBrush(C(29,39,46)))g.FillRectangle(b,r.Right-17,r.Y+3,14,r.Height-6);
     using var p=new Pen(trim.HasValue?muted:C(76,91,103),1.4f){StartCap=LineCap.Round,EndCap=LineCap.Round};float x=r.Right-10;g.DrawLines(p,new[]{new PointF(x-3,r.Y+9),new PointF(x,r.Y+6),new PointF(x+3,r.Y+9)});g.DrawLines(p,new[]{new PointF(x-3,r.Y+18),new PointF(x,r.Y+21),new PointF(x+3,r.Y+18)});
     if(!trim.HasValue)return;void Step(double delta){if(owner.PanelTrim() is {} now)owner.DragTrim(start,(start?now.from:now.to)+delta);}Hit(new(r.X,r.Y,r.Width-18,r.Height),()=>owner.EditPanelTime(start));Hit(new(r.Right-18,r.Y,18,r.Height/2),()=>Step(.01));Hit(new(r.Right-18,r.Y+r.Height/2,18,r.Height/2),()=>Step(-.01));
    }
-   Field(new(1230,249,71,27),true,trim?.from??0);Field(new(1350,249,71,27),false,trim?.to??0);
-   TextAt(g,T("Dauer: ","Time: ")+(trim.HasValue?Seconds(trim.Value.to-trim.Value.from)+" s":"–"),1438,257,12,muted,width:76,height:22);
+   Field(new(1234,251,100,32),true,trim?.from??0);Field(new(1415,251,99,32),false,trim?.to??0);
+   TextAt(g,T("Dauer: ","Time: ")+(trim.HasValue?Seconds(trim.Value.to-trim.Value.from)+" s":"–"),1194,285,12,muted,width:300,height:22);
   }
  }
 }

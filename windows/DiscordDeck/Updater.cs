@@ -28,20 +28,32 @@ internal static class Updater {
  internal static bool Matches(string path,string expected)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).Equals(expected,StringComparison.OrdinalIgnoreCase);
 }
 public sealed partial class MainForm {
- bool updating;
+ bool updating,checkingUpdate;Updater.Release? availableUpdate;string updateError="";
+ readonly System.Windows.Forms.Timer updateTimer=new(){Interval=600000};
+ void InitAutomaticUpdates(){if(Program.TestMode)return;updateTimer.Tick+=async(_,_)=>await RefreshUpdate();updateTimer.Start();Shown+=async(_,_)=>{await Task.Delay(2000);if(!IsDisposed)await RefreshUpdate();};FormClosed+=(_,_)=>updateTimer.Dispose();}
+ async Task RefreshUpdate(){
+  if(checkingUpdate||updating||IsDisposed)return;checkingUpdate=true;
+  try{using var c=Updater.Client();using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(20));var json=await c.GetStringAsync("https://api.github.com/repos/"+Updater.Repository+"/releases/latest",timeout.Token);var r=Updater.Parse(json);if(IsDisposed)return;availableUpdate=r!=null&&r.Version>Updater.Current?r:null;updateError="";}
+  catch(Exception e){updateError=e.Message;}
+  finally{checkingUpdate=false;if(!IsDisposed)deck.Invalidate();}
+ }
  async void CheckForUpdates(){
-  if(updating)return;updating=true;
+  if(updating)return;if(availableUpdate==null){await RefreshUpdate();if(availableUpdate==null){status.Text="Update: "+(string.IsNullOrEmpty(updateError)?T("Auf dem neuesten Stand","Up to date"):T("Prüfung fehlgeschlagen: ","Check failed: ")+updateError);return;}}
+  var release=availableUpdate;if(release==null)return;updating=true;
   try{
-   status.Text="Update: "+T("Suche nach Updates …","Checking for updates …");deck.Invalidate();
-   using var client=Updater.Client();var json=await client.GetStringAsync("https://api.github.com/repos/"+Updater.Repository+"/releases/latest");var release=Updater.Parse(json);
-   if(release==null||release.Version<=Updater.Current){status.Text="Update: "+T("Du nutzt die neueste Version: ","You are using the latest version: ")+Updater.Current.ToString(3);return;}
-   if(MessageBox.Show(this,T($"Version {release.Version} ist verfügbar. Jetzt herunterladen und installieren? Sounds und Einstellungen bleiben erhalten.",$"Version {release.Version} is available. Download and install now? Your sounds and settings are kept."),T("Update verfügbar","Update available"),MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes){status.Text="Update: "+T("Update abgebrochen","Update cancelled");return;}
-   status.Text="Update: "+T("Update wird heruntergeladen …","Downloading update …");
-   var folder=Path.Combine(Path.GetTempPath(),"SSB-Update",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);var path=Path.Combine(folder,"SSB-Setup.exe");
+   if(DarkChoice(T("Update installieren?","Install update?"),T($"Version {release.Version} herunterladen und installieren? Sounds und Einstellungen bleiben erhalten.",$"Download and install version {release.Version}? Sounds and settings are kept."),T("Installieren","Install"),null,T("Abbrechen","Cancel"))!=DialogResult.Yes)return;
+   status.Text="Update: "+T("Update wird heruntergeladen …","Downloading update …");deck.Invalidate();
+   using var client=Updater.Client();var folder=Path.Combine(Path.GetTempPath(),"SSB-Update",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);var path=Path.Combine(folder,"SSB-Setup.exe");
    using(var response=await client.GetAsync(release.Url,HttpCompletionOption.ResponseHeadersRead)){response.EnsureSuccessStatusCode();await using var file=File.Create(path);await response.Content.CopyToAsync(file);}
    if(!Updater.Matches(path,release.Digest)){File.Delete(path);throw new InvalidDataException(T("Prüfsumme stimmt nicht. Update verworfen.","Checksum mismatch. Update discarded."));}
    Process.Start(new ProcessStartInfo(path){UseShellExecute=true});status.Text="Update: "+T("Update-Installer geöffnet","Update installer opened");
   }catch(Exception e){status.Text="Update: "+T("Update fehlgeschlagen: ","Update failed: ")+e.Message;}
   finally{updating=false;if(!IsDisposed)deck.Invalidate();}
+ }
+ sealed partial class ReferenceDeck {
+  void UpdateButton(Graphics g){var r=new RectangleF(19,831,211,42);bool ready=owner.availableUpdate!=null;string label=owner.updating?T("Update wird geladen …","Downloading update …"):owner.checkingUpdate?T("Updates werden geprüft …","Checking updates …"):ready?T("↓   Updates installieren","↓   Install updates"):string.IsNullOrEmpty(owner.updateError)?T("✓   Auf dem neuesten Stand","✓   Up to date"):T("Update-Prüfung wiederholen","Retry update check");
+   if(!ready){Box(g,r,C(28,36,42),C(22,29,35),8,C(64,77,87));using var font=new Font("Segoe UI",12,FontStyle.Regular,GraphicsUnit.Pixel);using var brush=new SolidBrush(ink);using var fmt=new StringFormat{Alignment=StringAlignment.Center,LineAlignment=StringAlignment.Center};g.DrawString(label,font,brush,RectangleF.Inflate(r,-10,-4),fmt);Hit(r,owner.CheckForUpdates,label);return;}
+   float pulse=(float)(.5+.5*Math.Sin(Environment.TickCount64/400d));Box(g,r,C(73+(int)(pulse*20),61+(int)(pulse*15),34),C(39,34,24),8,green);TextAt(g,label,r.X+18,r.Y+12,14,green,width:r.Width-28,height:23);Hit(r,owner.CheckForUpdates);
+  }
  }
 }

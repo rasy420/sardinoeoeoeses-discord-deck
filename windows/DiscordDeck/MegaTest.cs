@@ -1,0 +1,61 @@
+using System.Reflection;
+using System.Text.Json;
+using NAudio.Wave;
+namespace DiscordDeck;
+public sealed partial class MainForm {
+ public static void RunMegaTest(){
+  var checks=new List<string>();var errors=new List<string>();MainForm? f=null;
+  void Check(bool c,string name){if(!c)throw new Exception(name);checks.Add(name);}
+  void Reject(Action a,string name){try{a();}catch{checks.Add(name);return;}throw new Exception(name);}
+  void Pump(int ms){var until=DateTime.UtcNow.AddMilliseconds(ms);while(DateTime.UtcNow<until){Application.DoEvents();Thread.Sleep(5);}}
+  try{
+   Directory.CreateDirectory(Settings.Folder);var a=Path.Combine(Settings.Folder,"original.wav");var b=Path.Combine(Settings.Folder,"replacement.wav");var shortFile=Path.Combine(Settings.Folder,"short.wav");
+   void Wave(string path,double secs){using var writer=new WaveFileWriter(path,WaveFormat.CreateIeeeFloatWaveFormat(44100,1));var data=new float[(int)(44100*secs)];for(int i=0;i<data.Length;i++)data[i]=.003f*(float)Math.Sin(i*2*Math.PI*440/44100);writer.WriteSamples(data,0,data.Length);}
+   Wave(a,4);Wave(b,2);Wave(shortFile,.02);
+   var settings=new Settings{TourDone=true,MixMicrophone=false,MonitorEnabled=false};settings.Slots[0]=new(){File=a,Name="Legacy visible name",Volume=.7f,TrimStart=.1,TrimEnd=3.9};settings.Slots[1]=new(){File=a,Name="Same file, separate slot"};settings.Slots[2]=new(){File=shortFile,Name="Short"};settings.Save();
+   Check(Settings.Load().Slots[0].Name=="Legacy visible name","Migration preserves existing visible name");Check(Settings.Load().Slots.Select(s=>s.Id).Distinct().Count()==100,"100 unique stable slot IDs");
+   AutoTour=false;f=new MainForm();void Prepare(Control c){_=c.Handle;foreach(Control child in c.Controls)Prepare(child);}Prepare(f);f.PerformLayout();var form=f;var slot=f.settings.Slots[0];var shared=f.settings.Slots[1];var id=slot.Id;
+   void Shot(string name){using var image=new Bitmap(form.Width,form.Height);form.DrawToBitmap(image,form.ClientRectangle);image.Save(Path.Combine(AppContext.BaseDirectory,name+".png"));}
+   void Paint(){Shot("mega-current");}
+   void Event(Control c,string name,EventArgs e)=>c.GetType().GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(c,new object[]{e});
+   void Click(float x,float y){Paint();int px=(int)(x*form.deck.Width/1536),py=(int)(y*form.deck.Height/1024);Event(form.deck,"OnMouseDown",new MouseEventArgs(MouseButtons.Left,1,px,py,0));Event(form.deck,"OnMouseUp",new MouseEventArgs(MouseButtons.Left,1,px,py,0));}
+   void Key(Keys key){Event(form.soundEditor!,"OnKeyDown",new KeyEventArgs(key));}
+   void Decision(DialogResult result,Action action){using var timer=new System.Windows.Forms.Timer{Interval=30};timer.Tick+=(_,_)=>{var d=Application.OpenForms.Cast<Form>().FirstOrDefault(x=>x!=form&&x is not MainForm);if(d!=null){d.DialogResult=result;d.Close();}};timer.Start();action();timer.Stop();}
+   Check(!f.soundPanelOpen&&f.deck.Columns==4,"Startup closes sidebar and releases grid width");Shot("mega-closed");
+   f.OpenSoundSettings(0);Check(f.soundPanelOpen&&f.selectedSound==0&&f.deck.Columns==3,"Gear opens correct editing slot");Check(f.audio.Playing==0,"Opening settings does not play audio");
+   f.DragTrim(true,.123456);f.SetGain(235);Check(slot.TrimStart==.1&&slot.Volume==.7f,"Trim and gain remain drafts");Check(f.TrimDirty,"Draft gain and trim marked dirty");f.OpenSoundSettings(0);Check(Math.Abs(f.PanelTrim()!.Value.from-.123456)<1e-8&&f.draftGain==2.35f,"Same gear preserves precise draft");
+   Decision(DialogResult.Cancel,()=>f.OpenSoundSettings(1));Check(f.selectedSound==0&&f.TrimDirty,"Cancel switch preserves editing draft");
+   Decision(DialogResult.Yes,()=>f.OpenSoundSettings(1));Check(f.selectedSound==1&&slot.TrimStart==.123456&&slot.Volume==2.35f,"Save before switch persists trim and gain");
+   f.OpenSoundSettings(0);f.DragTrim(true,.4);f.SetGain(50);Decision(DialogResult.No,f.CloseSoundSettings);Check(!f.soundPanelOpen&&slot.TrimStart==.123456&&slot.Volume==2.35f,"Discard before closing preserves saved state");
+   f.OpenSoundSettings(0);f.SetGain(125);f.ResetTrim();Check(!f.TrimDirty&&f.draftGain==2.35f&&f.PanelTrim()!.Value.from==.123456,"Reset restores last saved trim and gain");
+   f.EditSoundName();f.soundEditor!.Text="   Kurzer Jubel 日本語   ";Key(Keys.Enter);Check(slot.Name=="Kurzer Jubel 日本語"&&slot.CustomName,"Inline name trims and saves Unicode");Check(slot.File==a&&shared.Name=="Same file, separate slot","Rename leaves path and shared-file slot unchanged");
+   f.EditSoundName();f.soundEditor!.Text="";Key(Keys.Enter);Check(f.soundEditor!=null&&slot.Name=="Kurzer Jubel 日本語"&&f.editError.Length>0,"Blank name stays editable with error");Key(Keys.Escape);Check(f.soundEditor==null,"Escape dismisses name editor");
+   f.EditSoundName();f.soundEditor!.Text="Discarded";Key(Keys.Escape);Check(slot.Name=="Kurzer Jubel 日本語","Escape discards name draft");
+   f.EditPanelTime(true);f.soundEditor!.Text="0,234567";Key(Keys.Enter);Check(Math.Abs(f.PanelTrim()!.Value.from-.234567)<1e-8,"Comma input keeps internal precision");
+   f.EditPanelTime(false);f.soundEditor!.Text="3.8";Key(Keys.Enter);Check(f.PanelTrim()!.Value.to==3.8,"Decimal dot accepted");
+   foreach(var bad in new[]{"NaN","-1","4.1","0","","abc"}){f.EditPanelTime(false);f.soundEditor!.Text=bad;Key(Keys.Enter);Check(f.draftInvalid&&f.soundEditor!=null,"Invalid end rejected: "+bad);Reject(f.SaveTrim,"Invalid end prevents saving: "+bad);Key(Keys.Escape);}
+   f.SaveTrim();Check(slot.TrimStart==.234567&&slot.TrimEnd==3.8,"Precise numeric range saved");
+   f.OpenSoundSettings(2);f.DragTrim(true,.001234);f.DragTrim(false,.009876);f.SaveTrim();Check(Math.Abs(f.settings.Slots[2].TrimEnd-.009876)<1e-8,"Sub-50ms sound supports precise trim");using(var clip=new AudioEngine.Clip(shortFile,1,null,.001234,.009876)){var buf=new float[9600];Check(clip.Read(buf,0,buf.Length)>0,"Short trimmed clip decodes actual samples");}
+   f.OpenSoundSettings(0);f.TogglePanelPreview();Pump(80);Check(f.PanelPreviewing,"Preview plays draft through physical output");f.CloseSoundSettings();Check(!f.PanelPreviewing&&!f.soundPanelOpen,"Closing sidebar stops only preview");
+   f.StartAudio();Check(f.audio.Running,"Real virtual audio pipeline starts");
+   // Each tile region must add exactly one clip; editor stays independent.
+   f.OpenSoundSettings(1);foreach(var offset in new[]{new PointF(20,20),new PointF(90,39),new PointF(50,90),new PointF(190,58)}){f.audio.StopSounds();var r=f.deck.TileBounds(0);Click(r.X+offset.X,r.Y+offset.Y);Check(f.audio.Playing==1&&f.selectedSound==1,"Tile region plays once, editor unchanged: "+offset);}
+   f.audio.StopSounds();var gear=f.deck.TileBounds(0);Click(gear.Right-25,gear.Y+20);Check(f.selectedSound==0&&f.audio.Playing==0,"Gear click is exclusive and silent");
+   f.Play(0);f.Play(1);Check(f.audio.IsPlaying(slot)&&f.audio.IsPlaying(shared),"Parallel playback tracks both actual sounds");f.CloseSoundSettings();Check(f.audio.Playing==2&&!f.soundPanelOpen,"Closing editor leaves regular playback active");f.audio.StopSounds();Check(!f.audio.IsPlaying(slot)&&f.audio.Playing==0,"Stop clears actual playing IDs");
+   f.OpenSoundSettings(0);f.Play(0);f.Play(1);f.ReplaceSoundSource(slot,b,"replacement","");Check(!f.audio.IsPlaying(slot)&&f.audio.IsPlaying(shared),"Replace stops only changed slot");Check(slot.Id==id&&slot.Name=="Kurzer Jubel 日本語"&&slot.TrimStart==0&&slot.TrimEnd==0&&slot.Volume==2.35f,"Replace keeps identity/custom name/gain and resets trim");Check(f.Duration(slot.File)==2&&File.Exists(a),"Replacement duration recalculated; original kept");
+   var before=(slot.File,slot.Name,slot.Volume);Reject(()=>f.ReplaceSoundSource(slot,a+".missing","bad",""),"Invalid source rejected before mutation");Check((slot.File,slot.Name,slot.Volume)==before,"Failed source preserves saved state");
+   Directory.CreateDirectory(Settings.Config+".tmp");try{Reject(()=>f.ReplaceSoundSource(slot,a,"not saved",""),"Replacement save failure reported");Check((slot.File,slot.Name,slot.Volume)==before,"Replacement save failure rolled back");Reject(()=>f.RemoveSound(slot),"Removal save failure reported");Check(slot.File==b&&slot.Name==before.Name,"Removal save failure rolled back");}finally{Directory.Delete(Settings.Config+".tmp");}
+   var menu=f.deck.PrepareReplaceMenu();Check(menu.Items.Count==2&&menu.Items[0].Text=="Audiodatei auswählen …"&&menu.Items[1].Text=="MyInstants-Link einfügen …","Replace menu exact entries");f.deck.OpenReplaceMenu();Pump(40);Check(f.RectangleToScreen(f.ClientRectangle).Contains(menu.Bounds),"Replace menu stays inside window");menu.Close();
+   f.Play(0);f.Play(1);Decision(DialogResult.Cancel,f.ConfirmRemoveSound);Check(slot.File==b,"Delete cancel preserves source");Decision(DialogResult.Yes,f.ConfirmRemoveSound);Check(slot.File==""&&slot.Volume==.65f&&slot.TrimStart==0&&slot.TrimEnd==0&&slot.Id==id,"Remove resets only slot data and preserves ID");Check(shared.File==a&&File.Exists(a)&&File.Exists(b)&&f.settings.Slots.Count==100&&!f.soundPanelOpen,"Remove preserves originals, shared source, positions and closes panel");Check(!f.audio.IsPlaying(slot)&&f.audio.IsPlaying(shared),"Remove stops only edited sound");f.audio.StopSounds();
+   var empty=f.deck.TileBounds(0);Click(empty.X+50,empty.Y+70);Check(f.soundPanelOpen&&f.selectedSound==0&&f.audio.Playing==0,"Empty tile opens empty settings and never stale audio");f.CloseSoundSettings();
+   f.Play(1);Decision(DialogResult.OK,f.OpenAudioSettings);Check(f.audio.IsPlaying(shared)&&f.settings.MixMicrophone==false,"Closing global audio dialog preserves routing and playback");f.audio.StopSounds();
+   var moving=f.settings.Slots[1];f.MoveSound(1,25);Check(f.settings.Slots[25].Id==moving.Id&&Settings.Load().Slots[25].Id==moving.Id,"Reorder across banks persists stable identity");var payload=JsonSerializer.SerializeToElement(f.Dispatch("status",0));Check(payload.GetProperty("slots")[25].GetProperty("name").GetString()==moving.Name,"Phone status receives reordered sound without APK change");
+   f.OpenSoundSettings(25);f.DragTrim(true,.333333);f.MoveSound(25,1);Check(f.selectedSound==1&&f.PanelTrim()!.Value.from==.333333,"Reorder preserves active editor draft by identity");f.ResetTrim();f.CloseSoundSettings();
+   f.OpenSoundSettings(1);f.RenameSound(moving,"Keyboard");Paint();var ao=f.deck.AccessibilityObject;Check(Enumerable.Range(0,ao.GetChildCount()).Select(i=>ao.GetChild(i)?.Name).Any(n=>n=="Soundname bearbeiten"),"Pencil exposed to accessibility");Check(Enumerable.Range(0,ao.GetChildCount()).Select(i=>ao.GetChild(i)?.Name).Any(n=>n=="Sound aus Slot entfernen"),"Trash exposed to accessibility");
+   f.ClientSize=new(1080,720);f.PerformLayout();f.deck.OpenReplaceMenu();Pump(40);Check(f.RectangleToScreen(f.ClientRectangle).Contains(menu.Bounds),"Replace menu constrained at minimum size");menu.Close();Shot("mega-small");f.ClientSize=new(1536,1024);f.SetLanguage(true);Shot("mega-en");f.SetLanguage(false);Shot("mega-de");
+   var saved=Settings.Load();Check(saved.Slots[0].File==""&&saved.Slots[1].Name=="Keyboard"&&saved.Slots[1].Id==moving.Id,"Reload preserves removal, names and order");using var reopened=new MainForm();Check(!reopened.soundPanelOpen,"Restart always closes sidebar");
+   Check(Updater.Current==new Version(1,4,0,0),"Release version is 1.4.0");Check(f.updateTimer.Interval==600000,"Automatic update interval is ten minutes");
+  }catch(Exception e){errors.Add(e.ToString());}
+  finally{if(f!=null){f.exitRequested=true;f.Close();f.Dispose();}File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"mega-test.json"),JsonSerializer.Serialize(new{ok=errors.Count==0,checks,errors},new JsonSerializerOptions{WriteIndented=true}));if(errors.Count>0)Environment.ExitCode=1;}
+ }
+}

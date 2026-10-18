@@ -20,7 +20,7 @@ public sealed partial class MainForm {
   Task.Run(()=>{var result=new float[PeakBins];try{using var r=new AudioFileReader(path);long total=Math.Max(1,r.Length/4);var buf=new float[16384];long pos=0;int n;
     while((n=r.Read(buf,0,buf.Length))>0){for(int i=0;i<n;i++){int bin=(int)Math.Min(PeakBins-1,(pos+i)*PeakBins/total);var v=Math.Abs(buf[i]);if(v>result[bin])result[bin]=v;}pos+=n;}
     var max=Math.Max(.05f,result.Max());for(int i=0;i<PeakBins;i++)result[i]=(float)Math.Sqrt(result[i]/max);}catch{}
-   BeginInvoke(()=>{peaks[path]=result;deck.Invalidate();});});
+   if(!IsDisposed&&IsHandleCreated)try{BeginInvoke(()=>{if(!IsDisposed){peaks[path]=result;deck.Invalidate();}});}catch(InvalidOperationException){}});
   return null;
  }
  internal static string Seconds(double s)=>s.ToString("0.00",System.Globalization.CultureInfo.GetCultureInfo(En?"en-US":"de-DE"));
@@ -33,16 +33,17 @@ public sealed partial class MainForm {
   if(trimSlot!=selectedSound||trimFile!=slot.File){StopPanelPreview();(trimFrom,trimTo)=AudioEngine.Clip.Range(slot.TrimStart,slot.TrimEnd,total);trimSlot=selectedSound;trimFile=slot.File;}
   return (trimFrom,trimTo,total);
  }
- internal bool TrimDirty{get{if(PanelTrim() is not {} t)return false;var (s,e)=AudioEngine.Clip.Range(settings.Slots[selectedSound].TrimStart,settings.Slots[selectedSound].TrimEnd,t.total);return Math.Abs(s-t.from)>.004||Math.Abs(e-t.to)>.004;}}
+ internal bool TrimDirty{get{if(PanelTrim() is not {} t)return draftInvalid||Math.Abs(draftGain-settings.Slots[selectedSound].Volume)>1e-6;var (s,e)=AudioEngine.Clip.Range(settings.Slots[selectedSound].TrimStart,settings.Slots[selectedSound].TrimEnd,t.total);return Math.Abs(s-t.from)>1e-9||Math.Abs(e-t.to)>1e-9||Math.Abs(draftGain-settings.Slots[selectedSound].Volume)>1e-6||draftInvalid;}}
  internal void DragTrim(bool start,double seconds){
-  if(PanelTrim() is not {} t)return;StopPanelPreview();seconds=Math.Round(Math.Clamp(seconds,0,t.total),2);
-  if(start)trimFrom=Math.Min(seconds,trimTo-.05);else trimTo=Math.Max(seconds,trimFrom+.05);
+  if(PanelTrim() is not {} t)return;StopPanelPreview();seconds=Math.Clamp(seconds,0,t.total);draftInvalid=false;editError="";
+  if(start)trimFrom=Math.Min(seconds,trimTo-Math.Min(.001,t.total/100));else trimTo=Math.Max(seconds,trimFrom+Math.Min(.001,t.total/100));
   trimFrom=Math.Max(0,trimFrom);trimTo=Math.Min(t.total,trimTo);deck.Invalidate();
  }
- internal void ResetTrim(){if(PanelTrim() is {} t){trimFrom=0;trimTo=t.total;deck.Invalidate();}}
+ internal void ResetTrim(){ForgetTrim();draftGain=settings.Slots[selectedSound].Volume;draftInvalid=false;editError="";soundEditor?.Dispose();soundEditor=null;SyncSelected();deck.Invalidate();}
  internal void SaveTrim(){
-  if(PanelTrim() is not {} t)return;var slot=settings.Slots[selectedSound];bool full=trimFrom<=0&&trimTo>=t.total-.005;
-  slot.TrimStart=full?0:trimFrom;slot.TrimEnd=full||trimTo>=t.total-.005?0:trimTo;settings.Save();
+  if(draftInvalid)throw new InvalidOperationException(T("Bitte die markierte Eingabe korrigieren.","Please correct the marked value."));
+  if(PanelTrim() is not {} t)return;if(t.from<0||t.from>=t.to||t.to>t.total)throw new InvalidOperationException(T("Start muss vor Ende und innerhalb der Audiodauer liegen.","Start must precede end and be within the audio duration."));var slot=settings.Slots[selectedSound];bool full=trimFrom<=0&&trimTo>=t.total;var before=(slot.TrimStart,slot.TrimEnd,slot.Volume);
+  slot.TrimStart=full?0:trimFrom;slot.TrimEnd=full||trimTo>=t.total?0:trimTo;slot.Volume=draftGain;try{settings.Save();}catch{(slot.TrimStart,slot.TrimEnd,slot.Volume)=before;throw;}editError="";
   status.Text=T("Gespeichert: ","Saved: ")+slot.Name+" · "+(full?T("ganzer Sound","full sound"):$"{Seconds(trimFrom)} – {Seconds(trimTo)} s");deck.Invalidate();
  }
  void ForgetTrim(){trimSlot=-1;StopPanelPreview();}
@@ -58,8 +59,8 @@ public sealed partial class MainForm {
  }
  internal void TogglePanelPreview(){
   if(panelPlayer!=null){StopPanelPreview();return;}
-  if(PanelTrim() is not {} t)return;var slot=settings.Slots[selectedSound];
-  try{panelClip=new AudioEngine.Clip(slot.File,Math.Max(slot.Volume,.05f),null,t.from,t.to);var mine=panelClip;panelFrom=t.from;
+  if(draftInvalid||PanelTrim() is not {} t)return;var slot=settings.Slots[selectedSound];
+  try{panelClip=new AudioEngine.Clip(slot.File,draftGain,null,t.from,t.to);var mine=panelClip;panelFrom=t.from;
    panelPlayer=StartPreview(panelClip,()=>{if(ReferenceEquals(panelClip,mine))StopPanelPreview();});panelClock.Restart();
    panelTicker=new System.Windows.Forms.Timer{Interval=33};panelTicker.Tick+=(_,_)=>deck.Invalidate();panelTicker.Start();
   }catch(Exception e){StopPanelPreview();status.Text=T("Vorhören fehlgeschlagen: ","Preview failed: ")+e.Message;}
@@ -68,15 +69,7 @@ public sealed partial class MainForm {
  void StopPanelPreview(){panelTicker?.Dispose();panelTicker=null;panelPlayer?.Stop();panelPlayer?.Dispose();panelPlayer=null;panelClip?.Dispose();panelClip=null;panelClock.Reset();deck?.Invalidate();}
 
  // Zahnrad-Menü eines Soundplatzes.
- internal void SoundMenu(int index,Point screen){
-  SelectSound(index);var menu=new ContextMenuStrip{ShowImageMargin=false};
-  menu.Items.Add(T("Länge genau eingeben (von – bis) …","Set exact length (from – to) …"),null,(_,_)=>EditTrim());
-  menu.Items.Add(T("Datei auswählen …","Choose file …"),null,(_,_)=>ChooseFile());
-  menu.Items.Add(T("MyInstants-Link …","MyInstants link …"),null,(_,_)=>LinkSound());
-  menu.Closed+=(_,_)=>BeginInvoke(menu.Dispose);
-  menu.Show(screen);
- }
-
+ internal void SoundMenu(int index,Point screen){OpenSoundSettings(index);}
  internal void EditTrim(){
   var slot=settings.Slots[selectedSound];var total=Duration(slot.File);
   if(total<=0){status.Text=T("Kein Sound auf diesem Platz – zuerst eine Datei auswählen.","No sound on this slot – choose a file first.");deck.Invalidate();return;}

@@ -20,6 +20,7 @@ public class MainActivity extends Activity {
  final Map<String,Server> servers=new LinkedHashMap<>();
  final Button[] pads=new Button[100];final SeekBar[] gains=new SeekBar[100];final TextView[] gainLabels=new TextView[100];final boolean[] adjusting=new boolean[100];
  MobileUpdater updater;
+ final Runnable updateTick=new Runnable(){public void run(){if(updater!=null)updater.resume();ui.postDelayed(this,600000);}};
  TextView state;Spinner computers;Button pair;EditText manual;SharedPreferences prefs;
  volatile Server selected;volatile String key="",pairedId="";ScheduledFuture<?> polling;int ticks;boolean en;
  record Server(String id,String name,String host,int port){public String toString(){return name;}}
@@ -28,7 +29,7 @@ public class MainActivity extends Activity {
  static final int BG=0xFF0D141A,CARD=0xFF141C23,STROKE=0xFF26313A,GREEN=0xFFE8C87A,TEXT=0xFFF1F4F6,MUTED=0xFF8B97A1,RED=0xFFF0605A;
  android.graphics.drawable.GradientDrawable shape(int fill,int stroke,int radius){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(fill);if(stroke!=0)d.setStroke(dp(1),stroke);d.setCornerRadius(dp(radius));return d;}
  android.graphics.drawable.Drawable ripple(android.graphics.drawable.Drawable base){return new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x40E8C87A),base,null);}
- Button action(String text,int fill,int stroke,int color){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(14);b.setTextColor(color);b.setTypeface(android.graphics.Typeface.create("sans-serif-medium",0));b.setBackgroundTintList(null);b.setBackground(ripple(shape(fill,stroke,12)));b.setStateListAnimator(null);return b;}
+ Button action(String text,int fill,int stroke,int color){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(13);b.setGravity(Gravity.CENTER);b.setPadding(dp(10),dp(6),dp(10),dp(6));b.setMaxLines(2);b.setEllipsize(android.text.TextUtils.TruncateAt.END);b.setTextColor(color);b.setTypeface(android.graphics.Typeface.create("sans-serif-medium",0));b.setBackgroundTintList(null);b.setBackground(ripple(shape(fill,stroke,12)));b.setStateListAnimator(null);return b;}
  @Override public void onCreate(Bundle saved){super.onCreate(saved);prefs=getSharedPreferences("remote",0);key=prefs.getString("key","");pairedId=prefs.getString("id","");en="en".equals(prefs.getString("lang","de"));
   getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
   LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(12),dp(10),dp(12),0);root.setBackgroundColor(BG);
@@ -58,8 +59,8 @@ public class MainActivity extends Activity {
   if(step>0)b.setNeutralButton(t("Zurück","Back"),(d,w)->guide(step-1));b.show();
  }
  CharSequence label(int slot,String name){String n=String.format(java.util.Locale.ROOT,"%02d",slot+1);android.text.SpannableString s=new android.text.SpannableString(n+"\n"+name);s.setSpan(new android.text.style.ForegroundColorSpan(MUTED),0,n.length(),0);s.setSpan(new android.text.style.RelativeSizeSpan(.85f),0,n.length(),0);return s;}
- @Override protected void onStart(){super.onStart();updater.resume();polling=poll.scheduleWithFixedDelay(this::tick,0,2,TimeUnit.SECONDS);}
- @Override protected void onStop(){if(polling!=null)polling.cancel(true);super.onStop();}
+ @Override protected void onStart(){super.onStart();ui.removeCallbacks(updateTick);ui.post(updateTick);polling=poll.scheduleWithFixedDelay(this::tick,0,2,TimeUnit.SECONDS);}
+ @Override protected void onStop(){ui.removeCallbacks(updateTick);if(polling!=null)polling.cancel(true);super.onStop();}
  @Override protected void onDestroy(){poll.shutdownNow();commands.shutdownNow();if(updater!=null)updater.close();super.onDestroy();}
  void submit(Runnable r){try{commands.execute(r);}catch(RejectedExecutionException e){message(t("Bitte kurz warten","Please wait a moment"));}}
  void message(String text){ui.post(()->state.setText(text));}

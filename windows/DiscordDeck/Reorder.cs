@@ -15,16 +15,19 @@ public sealed partial class MainForm {
   var sound=settings.Slots[from];settings.Slots.RemoveAt(from);settings.Slots.Insert(to,sound);
   try{settings.Save();}catch{settings.Slots=before;throw;}
   selectedSound=settings.Slots.IndexOf(selected);if(pending!=null)trimSlot=settings.Slots.IndexOf(pending);
-  SyncSelected();status.Text="Sortieren: "+T($"„{sound.Name}“ auf Platz {to+1} verschoben. Handy übernimmt die Reihenfolge automatisch.",$"Moved “{sound.Name}” to slot {to+1}. Your phone receives the new order automatically.");deck.Invalidate();return true;
+  if(!TrimDirty)SyncSelected();status.Text="Sortieren: "+T($"„{sound.Name}“ auf Platz {to+1} verschoben. Handy übernimmt die Reihenfolge automatisch.",$"Moved “{sound.Name}” to slot {to+1}. Your phone receives the new order automatically.");deck.Invalidate();return true;
  }
 
  sealed partial class ReferenceDeck {
   int reorderFrom=-1,reorderOver=-1;PointF reorderDown;bool reorderMoved;
   int hoveredBank=-1;DateTime hoverSince,lastScroll;
   readonly System.Windows.Forms.Timer reorderTimer=new(){Interval=100};
-  internal RectangleF TileBounds(int index){int j=index-owner.bank*20;return new(273+(j%3==0?0:j%3==1?306:602),195+(j/3-owner.scrollRow)*135.5f,j%3==0?292:283,120);}
+  internal int Columns=>owner.soundPanelOpen?3:4;
+  internal float GridRight=>owner.soundPanelOpen?1158:1524;
+  internal int MaxScroll=>Math.Max(0,(int)Math.Ceiling(20d/Columns)-5);
+  internal RectangleF TileBounds(int index){int j=index-owner.bank*20;float step=(GridRight-273)/Columns;return new(273+j%Columns*step,195+(j/Columns-owner.scrollRow)*135.5f,step-13,120);}
   internal int TileAt(PointF p){
-   if(!new RectangleF(263,190,895,699).Contains(p))return -1;
+   if(!new RectangleF(263,190,GridRight-263,675).Contains(p))return -1;
    for(int j=0;j<20;j++){int index=owner.bank*20+j;var r=TileBounds(index);if(r.Y>=190&&r.Y<=858&&r.Contains(p))return index;}return -1;
   }
   void InitReorder(){reorderTimer.Tick+=(_,_)=>ReorderTick(DateTime.UtcNow);}
@@ -34,15 +37,15 @@ public sealed partial class MainForm {
    int target=-1;for(int b=0;b<5;b++)if(new RectangleF(14,123+b*64,219,47).Contains(mouse)){target=b;break;}
    if(target!=hoveredBank){hoveredBank=target;hoverSince=now;}
    if(target>=0&&target!=owner.bank&&(now-hoverSince).TotalMilliseconds>=550){owner.bank=target;owner.scrollRow=0;reorderOver=-1;Invalidate();}
-   if(mouse.X>=263&&mouse.X<=1158&&(now-lastScroll).TotalMilliseconds>=450){
-    int next=mouse.Y>=837&&mouse.Y<=889?Math.Min(2,owner.scrollRow+1):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollRow-1):owner.scrollRow;
+   if(mouse.X>=263&&mouse.X<=GridRight&&(now-lastScroll).TotalMilliseconds>=450){
+    int next=mouse.Y>=837&&mouse.Y<=889?Math.Min(MaxScroll,owner.scrollRow+1):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollRow-1):owner.scrollRow;
     if(next!=owner.scrollRow){owner.scrollRow=next;lastScroll=now;Invalidate();}
    }
    reorderOver=TileAt(mouse);
   }
   bool BeginReorder(PointF p){
    if(!owner.sorting)return false;int index=TileAt(p);if(index<0)return false;
-   owner.SelectSound(index);reorderFrom=reorderOver=index;reorderDown=p;reorderMoved=false;lastScroll=DateTime.UtcNow;hoveredBank=-1;Capture=true;Cursor=Cursors.SizeAll;reorderTimer.Start();Invalidate();return true;
+   reorderFrom=reorderOver=index;reorderDown=p;reorderMoved=false;lastScroll=DateTime.UtcNow;hoveredBank=-1;Capture=true;Cursor=Cursors.SizeAll;reorderTimer.Start();Invalidate();return true;
   }
   bool ContinueReorder(PointF p){
    if(reorderFrom<0)return false;

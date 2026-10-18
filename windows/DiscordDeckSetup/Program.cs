@@ -20,7 +20,7 @@ static class Program {
  [STAThread] static void Main(string[] args){
   ApplicationConfiguration.Initialize();
   if(args.Contains("--install")){
-   try{Install(_=>{},launch:!args.Contains("--no-launch"));File.WriteAllText(Path.Combine(Root,"install-result.txt"),"Installed successfully "+Version);}
+   try{Install(_=>{},launch:false);if(TestRoot==null&&Cable.Find()==null){var note=CableStep(_=>{});if(note.StartsWith("!"))throw new IOException(note[1..]);}if(!args.Contains("--no-launch"))Launch();File.WriteAllText(Path.Combine(Root,"install-result.txt"),"Installed successfully "+Version);}
    catch(Exception e){File.WriteAllText(Path.Combine(Path.GetTempPath(),"DiscordDeck-install-error.txt"),e.ToString());Environment.ExitCode=1;}
    return;
   }
@@ -47,9 +47,9 @@ static class Program {
  }
 
  sealed class SetupForm:Form{
-  readonly Label status=new(){Text=L("Installation für deinen Windows-Benutzer. Keine Administratorrechte nötig.","Installs for your Windows user. No administrator rights needed."),ForeColor=Muted,AutoSize=false,Font=new Font("Segoe UI",9.5f)};
+  readonly Label status=new(){Text=L("Voraussetzungen werden geprüft. Weiter installiert Programm und fehlende Komponenten; Windows fragt ggf. nach Administratorrechten.","Prerequisites are checked. Continue installs the app and missing components; Windows may request administrator permission."),ForeColor=Muted,AutoSize=false,Font=new Font("Segoe UI",9.5f)};
   readonly ProgressBar progress=new(){Style=ProgressBarStyle.Continuous,Maximum=100,Visible=false};
-  readonly FlatButton install=new(L("Installieren","Install"),Gold,Bg),cancel=new(L("Abbrechen","Cancel"),Card,Fg);
+  readonly FlatButton install=new(L("Weiter","Continue"),Gold,Bg),cancel=new(L("Abbrechen","Cancel"),Card,Fg);
   readonly CheckBox cable=new(){Checked=true,ForeColor=Fg,Font=new Font("Segoe UI",10f),AutoSize=false};
   readonly Label cableInfo=new(){ForeColor=Muted,Font=new Font("Segoe UI",9f),AutoSize=false};
   bool done;
@@ -59,11 +59,11 @@ static class Program {
    var fish=new PictureBox{Image=Resource("sardine.png") is {} s?Image.FromStream(s):null,SizeMode=PictureBoxSizeMode.Zoom,Bounds=new Rectangle(28,28,132,66)};
    var title=new Label{Text="Sardinöööses",Font=new Font("Segoe UI Semibold",24f),ForeColor=Fg,AutoSize=true,Location=new Point(172,30)};
    var sub=new Label{Text="S O U N D B O A R D   ·   "+Version,Font=new Font("Segoe UI",9f),ForeColor=Gold,AutoSize=true,Location=new Point(176,76)};
-   var features=new Label{Text=L("✓  100 Soundplätze in 5 Bänken\n✓  Handy-Fernbedienung im lokalen WLAN (Android-App inklusive)\n✓  YouTube-Import mit Zuschneiden und MyInstants-Links\n✓  Mikrofon beimischen und Sounds selbst mithören","✓  100 sound slots in 5 banks\n✓  Phone remote over your local Wi-Fi (Android app included)\n✓  YouTube import with trimming, plus MyInstants links\n✓  Mix in your microphone and hear the sounds yourself"),ForeColor=Fg,Font=new Font("Segoe UI",10.5f),AutoSize=false,Bounds=new Rectangle(32,136,556,100)};
+   var features=new Label{Text=L("✓  100 Soundplätze in 5 Bänken\n✓  Handy-Fernbedienung im lokalen WLAN (Android-App inklusive)\n✓  YouTube / TikTok-Import und MyInstants\n✓  Mikrofon beimischen und Sounds selbst mithören\n✓  .NET und Import-Tools inklusive, automatisch geprüft","✓  100 sound slots in 5 banks\n✓  Phone remote over your local Wi-Fi (Android app included)\n✓  YouTube / TikTok import and MyInstants\n✓  Mix in your microphone and hear the sounds yourself\n✓  .NET and import tools included and checked automatically"),ForeColor=Fg,Font=new Font("Segoe UI",9.5f),AutoSize=false,Bounds=new Rectangle(32,126,556,112)};
    var cableCard=new Panel{BackColor=Card,Bounds=new Rectangle(32,244,556,84)};
    var found=Cable.Find();
    if(found!=null){cable.Visible=false;cable.Checked=false;cableInfo.ForeColor=Gold;cableInfo.Font=new Font("Segoe UI",10f);cableInfo.Text=L("✓  Virtuelles Mikrofon für Discord gefunden:\n     ","✓  Virtual microphone for Discord found:\n     ")+found;cableInfo.Bounds=new Rectangle(14,16,528,52);}
-   else{cable.Text=L("VB-CABLE (kostenlos) herunterladen und installieren","Download and install VB-CABLE (free)");cable.Bounds=new Rectangle(14,10,528,26);cableInfo.Text=L("Nötig, damit Discord die Sounds hört. Donationware, unverändert von vb-audio.com; du bestätigst die Installation im VB-Audio-Fenster.","Needed so Discord can hear the sounds. Donationware, unmodified from vb-audio.com; you confirm the install in the VB-Audio window.");cableInfo.Bounds=new Rectangle(34,38,508,42);}
+   else{cable.Text=L("Erforderlich: VB-CABLE herunterladen und installieren","Required: download and install VB-CABLE (free)");cable.AutoCheck=false;cable.Bounds=new Rectangle(14,10,528,26);cableInfo.Text=L("Erforderlicher Audiotreiber von vb-audio.com (Donationware). Wird nach Weiter automatisch installiert. Spenden an VB-Audio sind willkommen.","Required audio driver from vb-audio.com (donationware). Installed automatically after Continue. Donations to VB-Audio are welcome.");cableInfo.Bounds=new Rectangle(34,38,508,42);}
    cableCard.Controls.AddRange(new Control[]{cable,cableInfo});
    cableCard.Paint+=(_,e)=>{using var pen=new Pen(Stroke);e.Graphics.DrawRectangle(pen,0,0,cableCard.Width-1,cableCard.Height-1);};
    status.Bounds=new Rectangle(32,340,556,44);progress.Bounds=new Rectangle(32,388,556,8);
@@ -71,16 +71,17 @@ static class Program {
    cancel.Click+=(_,_)=>Close();
    install.Click+=async(_,_)=>{
     if(done){Close();return;}
-    install.Enabled=cancel.Enabled=cable.Enabled=false;progress.Visible=true;status.ForeColor=Muted;
-    var withCable=cable.Visible&&cable.Checked;string? note=null;
+    install.Enabled=cancel.Enabled=false;progress.Visible=true;status.ForeColor=Muted;
+    var withCable=cable.Visible;string? note=null;
     try{
      await Task.Run(()=>Install(p=>BeginInvoke(()=>{progress.Value=Math.Clamp(p.percent,0,100);status.Text=p.text;}),launch:false));
      if(withCable)note=await Task.Run(()=>CableStep(p=>BeginInvoke(()=>{progress.Value=Math.Clamp(p.percent,0,100);status.Text=p.text;})));
-     Launch();progress.Value=100;
+     if(note!=null&&note.StartsWith("!"))throw new IOException(note[1..]);
+     ValidateInstalledTools(Path.Combine(Root,"App"));Launch();progress.Value=100;
      done=true;install.Text=L("Schließen","Close");install.Enabled=true;cancel.Visible=false;
      if(note!=null&&note.StartsWith("!")){status.ForeColor=Red;status.Text=L("Soundboard installiert und gestartet. ","Soundboard installed and started. ")+note[1..];}
      else{status.ForeColor=Gold;status.Text=L("Fertig! Das Soundboard läuft jetzt (Symbol unten rechts im Infobereich).\n","Done! The soundboard is now running (icon in the bottom-right tray).\n")+(note??L("Verknüpfung auf dem Desktop und im Startmenü angelegt.","Shortcuts added to the desktop and Start menu."));}
-    }catch(Exception e){status.ForeColor=Red;status.Text=L("Installation fehlgeschlagen: ","Installation failed: ")+e.Message;install.Text=L("Erneut versuchen","Try again");install.Enabled=cancel.Enabled=cable.Enabled=true;}
+    }catch(Exception e){status.ForeColor=Red;status.Text=L("Installation fehlgeschlagen: ","Installation failed: ")+e.Message;install.Text=L("Erneut versuchen","Try again");install.Enabled=cancel.Enabled=true;}
    };
    Controls.AddRange(new Control[]{fish,title,sub,features,cableCard,status,progress,install,cancel});
    Load+=(_,_)=>{sub.Left=title.Left+4;sub.Top=title.Bottom-2;fish.Top=title.Top+(sub.Bottom-title.Top-fish.Height)/2;};
@@ -98,6 +99,7 @@ static class Program {
   catch(Exception e){return "!"+L("VB-CABLE konnte nicht installiert werden: ","VB-CABLE could not be installed: ")+e.Message;}
  }
 
+ static void ValidateInstalledTools(string app){foreach(var tool in new[]{"ffmpeg","ffprobe","yt-dlp","deno"}){var path=Path.Combine(app,"tools",tool+".exe");if(!File.Exists(path)||new FileInfo(path).Length<1024)throw new IOException(L("Import-Komponente fehlt im Installationspaket: ","Import component missing from installation package: ")+tool);using var p=Process.Start(new ProcessStartInfo(path,tool.StartsWith("ff")?"-version":"--version"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true})??throw new IOException(tool);var stdout=p.StandardOutput.ReadToEndAsync();var stderr=p.StandardError.ReadToEndAsync();if(!p.WaitForExit(20000)){p.Kill(true);throw new IOException(L("Komponente reagiert nicht: ","Component did not respond: ")+tool);}if(p.ExitCode!=0)throw new IOException(L("Komponente startet nicht: ","Component did not start: ")+tool);Task.WaitAll(stdout,stderr);}}
  static void Launch(){var app=Path.Combine(Root,"App");Process.Start(new ProcessStartInfo(Path.Combine(app,"DiscordDeck.exe"),"--tray"){UseShellExecute=true,WorkingDirectory=app});}
 
  sealed class FlatButton:Button{
@@ -107,6 +109,7 @@ static class Program {
  static Stream? Resource(string name)=>Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
 
  static void Install(Action<(int percent,string text)> report,bool launch){
+  if(!Environment.Is64BitOperatingSystem||System.Runtime.InteropServices.RuntimeInformation.OSArchitecture!=System.Runtime.InteropServices.Architecture.X64)throw new PlatformNotSupportedException(L("Dieses Setup benötigt Windows x64.","This setup requires Windows x64."));
   var root=Root;var app=Path.Combine(root,"App");var exe=Path.Combine(app,"DiscordDeck.exe");var test=TestRoot!=null;
   Directory.CreateDirectory(root);
   report((2,L("Laufendes Soundboard wird beendet …","Closing the running soundboard …")));
@@ -126,6 +129,7 @@ static class Program {
    }
   }
   if(!File.Exists(Path.Combine(staging,"DiscordDeck.exe")))throw new IOException(L("DiscordDeck.exe fehlt im Paket","DiscordDeck.exe missing from the package"));
+  ValidateInstalledTools(staging);
   report((86,L("Programm wird eingerichtet …","Setting up the program …")));
   var backup=app+".previous";
   if(Directory.Exists(backup))Directory.Delete(backup,true);

@@ -36,7 +36,7 @@ final class MobileUpdater {
   long target=prefs.getLong("updateCode",0);
   if(target>0&&installed()>=target){clearDownload();banner.hide();}
   if(prefs.getLong("updateDownload",-1)>=0){restoreDownload();return;}
-  if(!checking&&(lastCheck==0||System.currentTimeMillis()-lastCheck>60*60*1000))check();
+  if(!checking&&(lastCheck==0||System.currentTimeMillis()-lastCheck>10*60*1000))check();
  }
  void check(){
   if(checking||closed)return;checking=true;lastCheck=System.currentTimeMillis();

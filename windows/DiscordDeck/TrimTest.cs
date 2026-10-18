@@ -46,8 +46,8 @@ public sealed partial class MainForm {
   Pump(3600);Check(!form.PanelPreviewing,"Vorhören im Panel endet am End-Marker");
   form.SaveTrim();Check(Math.Abs(slot.TrimStart-.5)<.03&&Math.Abs(slot.TrimEnd-3.9)<.03&&!form.TrimDirty,$"Panel gespeichert: {slot.TrimStart}–{slot.TrimEnd}");
   form.SelectSound(1);form.SelectSound(0);Check(form.PanelTrim() is {} p3&&Math.Abs(p3.from-.5)<.03,"nach Platzwechsel aus Speicher geladen");
-  form.ResetTrim();Check(form.TrimDirty,"⟲ ganzer Sound vorgemerkt");form.SaveTrim();Check(slot.TrimStart==0&&slot.TrimEnd==0,"ganzer Sound gespeichert");
-  slot.TrimStart=1.25;slot.TrimEnd=2.5;form.SelectSound(1);form.SelectSound(0);
+  var savedFrom=slot.TrimStart;var savedTo=slot.TrimEnd;form.DragTrim(true,.8);form.ResetTrim();Check(!form.TrimDirty,"⟲ gespeicherten Zustand wiederhergestellt");form.SaveTrim();Check(slot.TrimStart==savedFrom&&slot.TrimEnd==savedTo,"Zurücksetzen behält gespeicherten Ausschnitt");
+  slot.TrimStart=1.25;slot.TrimEnd=2.5;form.ForgetTrim();form.SelectSound(1);form.SelectSound(0);
   // Echte Wiedergabe über die Audio-Pipeline: Clip muss nach ~1,25 s von selbst enden.
   try{form.Try(form.StartAudio);Pump(500);if(form.audio.Running){form.Play(0);Pump(200);Check(form.audio.Playing==1,"Pipeline spielt");Pump(1600);Check(form.audio.Playing==0,"Pipeline: Clip nach Bereichsende beendet");form.ToggleAudio();}else log.Add("Pipeline übersprungen: "+form.status.Text);}catch(Exception e){errors.Add("Pipeline: "+e.Message);}
   // Neue Datei setzt den Bereich zurück (wie bei Datei/MyInstants/YouTube).

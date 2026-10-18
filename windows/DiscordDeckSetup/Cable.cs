@@ -4,8 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
 // Virtuelles Audiokabel: vorhandenes erkennen, sonst das unveränderte Originalpaket von vb-audio.com laden und den
-// offiziellen VB-CABLE-Installer starten. Die Lizenz erlaubt kein stilles Einbetten in fremde Installer; der Nutzer
-// bestätigt die Installation deshalb selbst im VB-Audio-Fenster.
+// offiziellen VB-CABLE-Installer starten; Windows und der Herstellerdialog bleiben sichtbar.
 static class Cable {
  public const string PackUrl="https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip",Signer="BUREL VINCENT";
  const string Name="{a45c254e-df1c-4efd-8020-67d146a850e0},2",Interface="{b3f8fa53-0004-438e-9003-51a46e139bfc},6";
@@ -54,8 +53,10 @@ static class Cable {
  // weil Windows das neue Kabel sonst gern zum Standard-Lautsprecher macht.
  public static (bool installed,string? device) Install(string setup,Action<string> report){
   var before=Defaults.Read();
-  report(Program.L("Bitte im VB-Audio-Fenster auf „Install Driver“ klicken …","Please click “Install Driver” in the VB-Audio window …"));
-  using(var p=Process.Start(new ProcessStartInfo(setup){UseShellExecute=true,Verb="runas",WorkingDirectory=Path.GetDirectoryName(setup)!}))p?.WaitForExit((int)TimeSpan.FromMinutes(15).TotalMilliseconds);
+  if(!SignedByVbAudio(setup))throw new IOException(Program.L("Ungültige Herstellersignatur.","Invalid manufacturer signature."));
+  report(Program.L("VB-CABLE wird automatisch installiert. Bitte die Windows-Administratorabfrage bestätigen …","Installing VB-CABLE automatically. Please confirm the Windows administrator prompt …"));
+  try{using var p=Process.Start(new ProcessStartInfo(setup,"-i -h"){UseShellExecute=true,Verb="runas",WorkingDirectory=Path.GetDirectoryName(setup)!});if(p==null||!p.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds))throw new IOException(Program.L("Treiberinstallation nicht abgeschlossen. Bitte Windows-Dialog prüfen und erneut versuchen.","Driver installation did not finish. Please check the Windows dialog and retry."));}
+  finally{Defaults.Restore(before);}
   report(Program.L("Warte auf das neue Audiogerät …","Waiting for the new audio device …"));
   string? found=null;for(int i=0;i<40&&(found=Find())==null;i++)Thread.Sleep(500);
   Defaults.Restore(before);

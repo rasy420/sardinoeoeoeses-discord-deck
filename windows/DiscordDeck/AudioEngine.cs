@@ -37,6 +37,9 @@ public sealed class AudioEngine:IDisposable {
  public void SetVolume(float volume,float microphone){master.Volume=Math.Clamp(volume,0,1);if(micGain!=null)micGain.Volume=Math.Clamp(microphone,0,2);}
  public void Play(SoundSlot slot){if(!Running)throw new InvalidOperationException(T("Audio zuerst starten.","Start audio first."));if(!File.Exists(slot.File))throw new FileNotFoundException(T("Sounddatei fehlt. Bitte neu zuweisen.","Sound file is missing. Please assign it again."),slot.File);var c=new Clip(slot.File,slot.Volume,slot);lock(gate){if(clips.Count>=16){c.Dispose();throw new InvalidOperationException(T("Maximal 16 gleichzeitige Sounds. Mit Stopp beenden.","At most 16 sounds at once. Use Stop to end them."));}clips.Add(c);}try{sounds.AddMixerInput(c);}catch{lock(gate)clips.Remove(c);c.Dispose();throw;}}
  public int Playing{get{lock(gate)return clips.Count;}}
+ public string PlayingSignature{get{lock(gate)return string.Join(",",clips.Select(c=>c.Slot?.Id).Distinct().Order());}}
+ public bool IsPlaying(SoundSlot slot){lock(gate)return clips.Any(c=>ReferenceEquals(c.Slot,slot));}
+ public void StopSlot(SoundSlot slot){Clip[] stopped;lock(gate){stopped=clips.Where(c=>ReferenceEquals(c.Slot,slot)).ToArray();foreach(var c in stopped)clips.Remove(c);}foreach(var c in stopped){sounds.RemoveMixerInput(c);c.Dispose();}}
  public void SetSlotVolume(SoundSlot slot){lock(gate)foreach(var clip in clips)if(ReferenceEquals(clip.Slot,slot))clip.SetVolume(slot.Volume);}
  public void StopSounds(){Clip[] all;lock(gate){all=clips.ToArray();clips.Clear();}foreach(var c in all){sounds.RemoveMixerInput(c);c.Dispose();}monitorBuffer?.ClearBuffer();}
  public void Stop(){if(output!=null){output.PlaybackStopped-=OutputStopped;output.Stop();output.Dispose();output=null;}if(monitor!=null){monitor.PlaybackStopped-=OutputStopped;monitor.Stop();monitor.Dispose();monitor=null;}monitorBuffer=null;if(mic!=null){mic.DataAvailable-=MicData;mic.RecordingStopped-=MicStopped;mic.StopRecording();mic.Dispose();mic=null;}mixer.RemoveAllMixerInputs();mixer.AddMixerInput(soundTap);StopSounds();micBuffer=null;micGain=null;}
@@ -53,7 +56,7 @@ public sealed class AudioEngine:IDisposable {
  public Clip(string path,float volume,SoundSlot? slot=null):this(path,volume,slot,slot?.TrimStart??0,slot?.TrimEnd??0){}
  public Clip(string path,float volume,SoundSlot? slot,double trimStart,double trimEnd){Slot=slot;file=new AudioFileReader(path);try{var (start,end)=Range(trimStart,trimEnd,file.TotalTime.TotalSeconds);ISampleProvider s=file;if(start>0)file.CurrentTime=TimeSpan.FromSeconds(start);if(end<file.TotalTime.TotalSeconds)s=new OffsetSampleProvider(file){Take=TimeSpan.FromSeconds(end-start)};source=new VolumeSampleProvider(Convert(s)){Volume=Math.Clamp(volume,0,4)};}catch{file.Dispose();throw;}}
  // Gültiger Abspielbereich; ungültige oder leere Bereiche spielen den ganzen Sound.
- public static (double start,double end) Range(double start,double end,double total){if(!double.IsFinite(start)||start<0||start>=total)start=0;if(!double.IsFinite(end)||end<=0||end>total)end=total;if(end-start<.05){start=0;end=total;}return (start,end);}
+ public static (double start,double end) Range(double start,double end,double total){if(!double.IsFinite(start)||start<0||start>=total)start=0;if(!double.IsFinite(end)||end<=0||end>total)end=total;if(end<=start){start=0;end=total;}return (start,end);}
  public WaveFormat WaveFormat=>source.WaveFormat;
  public void SetVolume(float volume){lock(sync)source.Volume=Math.Clamp(volume,0,4);}
  public int Read(float[] buffer,int offset,int count){lock(sync)return disposed?0:source.Read(buffer,offset,count);}
