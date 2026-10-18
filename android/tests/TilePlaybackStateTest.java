@@ -1,0 +1,5 @@
+package de.cocoa.discorddeck;
+public class TilePlaybackStateTest {
+ static int n;static void check(boolean c){if(!c)throw new AssertionError("Check "+n);n++;}
+ public static void main(String[] args){TilePlaybackState s=new TilePlaybackState();check(!s.begin(0));String[] ids=new String[100];boolean[] assigned=new boolean[100],active=new boolean[100];ids[0]="A";ids[1]="B";assigned[0]=assigned[1]=true;s.snapshot(ids,assigned,active,true);check(s.begin(0));check(!s.begin(0));check(!s.playing(0));s.finish("A",true);check(s.playing(0));check(s.begin(1));s.finish("B",true);check(s.playing(0)&&s.playing(1));check(s.begin(0));s.finish("A",false);check(!s.playing(0)&&s.playing(1));ids[0]="B";ids[1]="A";active[0]=true;s.snapshot(ids,assigned,active,true);check(s.playing(0)&&!s.playing(1));s.disconnect();check(!s.begin(0)&&s.playing(0));active[0]=false;s.snapshot(ids,assigned,active,true);check(!s.playing(0));check(s.begin(1));s.finish("A",null);check(!s.busy(1)&&!s.playing(1));s.snapshot(ids,assigned,active,false);check(!s.begin(0));s.reset();check(!s.connected&&s.playing.isEmpty()&&s.ids[0]==null);System.out.println("PASS "+n+" state checks");}
+}

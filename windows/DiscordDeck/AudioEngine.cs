@@ -38,6 +38,7 @@ public sealed class AudioEngine:IDisposable {
  public void Play(SoundSlot slot){if(!Running)throw new InvalidOperationException(T("Audio zuerst starten.","Start audio first."));if(!File.Exists(slot.File))throw new FileNotFoundException(T("Sounddatei fehlt. Bitte neu zuweisen.","Sound file is missing. Please assign it again."),slot.File);var c=new Clip(slot.File,slot.Volume,slot);lock(gate){if(clips.Count>=16){c.Dispose();throw new InvalidOperationException(T("Maximal 16 gleichzeitige Sounds. Mit Stopp beenden.","At most 16 sounds at once. Use Stop to end them."));}clips.Add(c);}try{sounds.AddMixerInput(c);}catch{lock(gate)clips.Remove(c);c.Dispose();throw;}}
  public int Playing{get{lock(gate)return clips.Count;}}
  public string PlayingSignature{get{lock(gate)return string.Join(",",clips.Select(c=>c.Slot?.Id).Distinct().Order());}}
+ public HashSet<string> PlayingIds(){lock(gate)return clips.Where(c=>c.Slot!=null).Select(c=>c.Slot!.Id).ToHashSet();}
  public bool IsPlaying(SoundSlot slot){lock(gate)return clips.Any(c=>ReferenceEquals(c.Slot,slot));}
  public void StopSlot(SoundSlot slot){Clip[] stopped;lock(gate){stopped=clips.Where(c=>ReferenceEquals(c.Slot,slot)).ToArray();foreach(var c in stopped)clips.Remove(c);}foreach(var c in stopped){sounds.RemoveMixerInput(c);c.Dispose();}}
  public void SetSlotVolume(SoundSlot slot){lock(gate)foreach(var clip in clips)if(ReferenceEquals(clip.Slot,slot))clip.SetVolume(slot.Volume);}

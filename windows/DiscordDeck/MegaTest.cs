@@ -55,7 +55,7 @@ public sealed partial class MainForm {
    f.OpenSoundSettings(1);f.RenameSound(moving,"Keyboard");Paint();var ao=f.deck.AccessibilityObject;Check(Enumerable.Range(0,ao.GetChildCount()).Select(i=>ao.GetChild(i)?.Name).Any(n=>n=="Soundname bearbeiten"),"Pencil exposed to accessibility");Check(Enumerable.Range(0,ao.GetChildCount()).Select(i=>ao.GetChild(i)?.Name).Any(n=>n=="Sound aus Slot entfernen"),"Trash exposed to accessibility");
    f.ClientSize=new(1080,720);f.PerformLayout();f.deck.OpenReplaceMenu();Pump(40);Check(f.RectangleToScreen(f.ClientRectangle).Contains(menu.Bounds),"Replace menu constrained at minimum size");menu.Close();Shot("mega-small");f.ClientSize=new(1536,1024);f.SetLanguage(true);Shot("mega-en");f.SetLanguage(false);Shot("mega-de");
    var saved=Settings.Load();Check(saved.Slots[0].File==""&&saved.Slots[1].Name=="Keyboard"&&saved.Slots[1].Id==moving.Id,"Reload preserves removal, names and order");using var reopened=new MainForm();Check(!reopened.soundPanelOpen,"Restart always closes sidebar");
-   Check(Updater.Current==new Version(1,4,3,0),"Release version is 1.4.3");Check(f.updateTimer.Interval==600000,"Automatic update interval is ten minutes");
+   Check(Updater.Current==new Version(1,4,4,0),"Release version is 1.4.4");Check(f.updateTimer.Interval==600000,"Automatic update interval is ten minutes");
   }catch(Exception e){errors.Add(e.ToString());}
   finally{if(f!=null){f.exitRequested=true;f.Close();f.Dispose();}File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"mega-test.json"),JsonSerializer.Serialize(new{ok=errors.Count==0,checks,errors},new JsonSerializerOptions{WriteIndented=true}));if(errors.Count>0)Environment.ExitCode=1;}
  }
