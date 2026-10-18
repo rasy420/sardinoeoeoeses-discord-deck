@@ -16,7 +16,7 @@ public sealed partial class MainForm {
   void Event(string method,int x,int y,MouseButtons button=MouseButtons.Left)=>form.deck.GetType().GetMethod(method,flags)!.Invoke(form.deck,new object[]{new MouseEventArgs(button,1,x,y,0)});
   void Drag(int x,int y,int tx,int ty){Event("OnMouseDown",x,y);Event("OnMouseMove",tx,ty);Paint();Event("OnMouseUp",tx,ty);Paint();}
   void SortClick(){Paint();var r=form.deck.ReorderButtonBounds;Event("OnMouseDown",(int)r.X+15,(int)r.Y+15);Event("OnMouseUp",(int)r.X+15,(int)r.Y+15);}
-  var original=form.settings.Slots.ToArray();Paint();SortClick();Check(form.sorting,"Pencil reorder button enters mode");Paint("reorder-mode.png");
+  var original=form.settings.Slots.ToArray();Paint();SortClick();Check(form.sorting,"Edit button enters mode");Paint("reorder-mode.png");
   Drag(400,275,700,410);Check(ReferenceEquals(form.settings.Slots[4],original[0]),"Mouse drag moves slot 1 to slot 5");Check(ReferenceEquals(form.settings.Slots[0],original[1]),"Other sounds shift without overwriting");Check(form.selectedSound==4,"Selection follows the moved sound");Check(form.settings.Slots[4].TrimStart==.1&&form.settings.Slots[4].Volume==.01f&&form.settings.Slots[4].SourceUrl.EndsWith("/1"),"File, gain, source and trim move together");
   Check(form.MoveSound(4,0)&&form.settings.Slots.SequenceEqual(original),"Moving backwards restores original order");
   Check(!form.MoveSound(-1,0)&&!form.MoveSound(0,100)&&!form.MoveSound(0,0),"Invalid and same-position moves ignored");

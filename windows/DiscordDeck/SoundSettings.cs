@@ -34,17 +34,17 @@ public sealed partial class MainForm {
    if(ReferenceEquals(slot,settings.Slots[selectedSound])){if(value<0||value>trim.total||(start?value>=trim.to:value<=trim.from))throw new ArgumentException(T("0 ≤ Start < Ende ≤ Audiodauer erforderlich.","Required: 0 ≤ start < end ≤ duration."));StopPanelPreview();if(start)trimFrom=value;else trimTo=value;draftInvalid=false;editError="";deck.Invalidate();}
   },13,"Segoe UI");
  }
- void BeginSoundEdit(RectangleF logical,string text,Action<string> commit,float size,string family){
+ void BeginSoundEdit(RectangleF logical,string text,Action<string> commit,float size,string family,string? accessibleName=null){
   if(soundEditor!=null){soundEditor.Focus();return;}
-  var editor=new TextBox{Text=text,MaxLength=100,BorderStyle=BorderStyle.None,BackColor=Color.FromArgb(23,31,37),ForeColor=Color.FromArgb(240,239,231),Font=new Font(family,size*deck.Height/1024f,FontStyle.Regular,GraphicsUnit.Pixel),AccessibleName=size>20?T("Soundname bearbeiten","Edit sound name"):T("Sekunden bearbeiten","Edit seconds")};
+  var editor=new TextBox{Text=text,MaxLength=100,BorderStyle=BorderStyle.None,BackColor=Color.FromArgb(23,31,37),ForeColor=Color.FromArgb(240,239,231),Font=new Font(family,size*deck.Height/1024f,FontStyle.Regular,GraphicsUnit.Pixel),AccessibleName=accessibleName??(size>20?T("Soundname bearbeiten","Edit sound name"):T("Sekunden bearbeiten","Edit seconds"))};
   soundEditor=editor;editorLogical=logical;editorFontSize=size;editorFontFamily=family;editor.Parent=deck;LayoutSoundEditor();bool closing=false;
   void Close(bool save,bool keepInvalid){
    if(closing)return;
-   if(save)try{commit(editor.Text);editError="";draftInvalid=false;}catch(Exception e){editError=e.Message;draftInvalid=size<20;status.Text=T("Fehler: ","Error: ")+e.Message;editor.BackColor=Color.FromArgb(77,32,32);deck.Invalidate();if(keepInvalid){editor.SelectAll();return;}return;}
+   if(save)try{commit(editor.Text);editError="";draftInvalid=false;}catch(Exception e){editError=e.Message;draftInvalid=size==13;status.Text=T("Fehler: ","Error: ")+e.Message;editor.BackColor=Color.FromArgb(77,32,32);deck.Invalidate();if(keepInvalid){editor.SelectAll();return;}return;}
    closing=true;soundEditor=null;var font=editor.Font;editor.Dispose();font.Dispose();deck.Invalidate();
   }
   editor.KeyDown+=(_,e)=>{if(e.KeyCode==Keys.Enter){e.SuppressKeyPress=true;Close(true,true);if(soundEditor==null)deck.Focus();}else if(e.KeyCode==Keys.Escape){e.SuppressKeyPress=true;draftInvalid=false;editError="";Close(false,false);deck.Focus();}};
-  editor.TextChanged+=(_,_)=>{if(size<20){draftInvalid=true;deck.Invalidate();}};editor.Leave+=(_,_)=>Close(true,false);editor.Focus();editor.SelectAll();
+  editor.TextChanged+=(_,_)=>{if(size==13){draftInvalid=true;deck.Invalidate();}};editor.Leave+=(_,_)=>Close(true,false);editor.Focus();editor.SelectAll();
  }
 
  sealed partial class ReferenceDeck {
@@ -66,7 +66,7 @@ public sealed partial class MainForm {
   }
   internal void OpenReplaceMenu(){if(owner.importing)return;var menu=PrepareReplaceMenu();var sz=menu.GetPreferredSize(Size.Empty);int x=Math.Min((int)(1194*Width/1536f),Width-sz.Width-8),y=(int)(366*Height/1024f);if(y+sz.Height>Height)y=(int)(328*Height/1024f)-sz.Height;menu.Show(this,new Point(Math.Max(8,x),Math.Max(8,y)));}
   internal RectangleF NamePencil(Graphics g,string name){using var font=new Font("Bahnschrift SemiCondensed",27,FontStyle.Regular,GraphicsUnit.Pixel);float width=Math.Min(259,g.MeasureString(name,font,1000,StringFormat.GenericTypographic).Width);return new(1194+width+11,145,25,28);}
-  void Pencil(Graphics g,RectangleF r){using var pen=new Pen(muted,1.5f){LineJoin=LineJoin.Round};float x=r.X+3,y=r.Y+4;g.DrawPolygon(pen,new[]{new PointF(x,y+19),new PointF(x+3,y+11),new PointF(x+15,y-1),new PointF(x+20,y+4),new PointF(x+8,y+16)});g.DrawLine(pen,x+3,y+11,x+8,y+16);g.DrawLine(pen,x+12,y+2,x+17,y+7);}
+  void Pencil(Graphics g,RectangleF r,Color? color=null){using var pen=new Pen(color??muted,1.5f){LineJoin=LineJoin.Round};float x=r.X+3,y=r.Y+4;g.DrawPolygon(pen,new[]{new PointF(x,y+19),new PointF(x+3,y+11),new PointF(x+15,y-1),new PointF(x+20,y+4),new PointF(x+8,y+16)});g.DrawLine(pen,x+3,y+11,x+8,y+16);g.DrawLine(pen,x+12,y+2,x+17,y+7);}
   readonly ToolTip sourceTip=new();
   string sourceTipText="";
   void SourceRow(Graphics g,SoundSlot slot){

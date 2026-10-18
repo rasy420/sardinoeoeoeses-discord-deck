@@ -8,6 +8,8 @@ Windows 10/11 (64 Bit). Der Installer enthält .NET-Laufzeit, Audio-Bibliotheken
 
 Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim ersten Öffnen und erneut über ?, Schnittmarker mit Mausbedienung, Vorhören und Speichern. Android enthält eine eigene Kurzanleitung. Die Update-Funktion unten links und im Infobereich lädt das neueste stabile GitHub-Release, prüft SHA-256 und öffnet den Installer. Sounds und Einstellungen bleiben erhalten.
 
+**Neu in 1.4.3:** **Bearbeiten** unter dem roten Stoppen-Knopf schaltet den Bearbeitungsmodus ein. Dann lassen sich einzelne Sounds und ganze Bänke verschieben. Nur in diesem Modus erscheinen Stifte zum Umbenennen der Bänke; **Fertig** beendet den Modus. Alle fünf Bänke und 100 Soundplätze bleiben erhalten. Beim Kachelklick klappt die Sound-Bearbeitung zu. Falls Änderungen offen sind, muss zuerst über den goldenen Speichern-Knopf gespeichert werden; vorher wird der Kachelklick blockiert.
+
 **Neu in 1.4.2:** Ein Stiftsymbol neben der Banknummer oberhalb der Kacheln schaltet Umsortieren ein und aus. Alle Sounds stoppen steht unter den fünf Bänken. Leere Slots zeigen keine zufällige Wellenform mehr. Die Tour-Markierungen folgen dem aktuellen Layout, der sichtbaren Kachel und der Breite des Soundbereichs.
 
 **Neu in 1.4.1:** Die Installation über den Update-Knopf ist repariert. Das Setup gibt sein geerbtes Arbeitsverzeichnis frei, bevor es den Programmordner austauscht. Falls ein 1.4.0-Setup noch mit einer Dateisperre offen ist, dieses Fenster zuerst schließen und den aktuellen Installer starten.

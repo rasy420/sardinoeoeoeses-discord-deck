@@ -42,7 +42,7 @@ public sealed partial class MainForm {
  internal void ResetTrim(){ForgetTrim();draftGain=settings.Slots[selectedSound].Volume;draftInvalid=false;editError="";soundEditor?.Dispose();soundEditor=null;SyncSelected();deck.Invalidate();}
  internal void SaveTrim(){
   if(draftInvalid)throw new InvalidOperationException(T("Bitte die markierte Eingabe korrigieren.","Please correct the marked value."));
-  if(PanelTrim() is not {} t)return;if(t.from<0||t.from>=t.to||t.to>t.total)throw new InvalidOperationException(T("Start muss vor Ende und innerhalb der Audiodauer liegen.","Start must precede end and be within the audio duration."));var slot=settings.Slots[selectedSound];bool full=trimFrom<=0&&trimTo>=t.total;var before=(slot.TrimStart,slot.TrimEnd,slot.Volume);
+  if(PanelTrim() is not {} t)throw new InvalidOperationException(T("Die Soundquelle fehlt oder kann nicht gelesen werden.","The sound source is missing or cannot be read."));if(t.from<0||t.from>=t.to||t.to>t.total)throw new InvalidOperationException(T("Start muss vor Ende und innerhalb der Audiodauer liegen.","Start must precede end and be within the audio duration."));var slot=settings.Slots[selectedSound];bool full=trimFrom<=0&&trimTo>=t.total;var before=(slot.TrimStart,slot.TrimEnd,slot.Volume);
   slot.TrimStart=full?0:trimFrom;slot.TrimEnd=full||trimTo>=t.total?0:trimTo;slot.Volume=draftGain;try{settings.Save();}catch{(slot.TrimStart,slot.TrimEnd,slot.Volume)=before;throw;}editError="";
   status.Text=T("Gespeichert: ","Saved: ")+slot.Name+" · "+(full?T("ganzer Sound","full sound"):$"{Seconds(trimFrom)} – {Seconds(trimTo)} s");deck.Invalidate();
  }
