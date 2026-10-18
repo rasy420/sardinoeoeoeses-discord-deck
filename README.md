@@ -8,6 +8,8 @@ Windows 10/11 (64 Bit). Der Installer enthält .NET-Laufzeit, Audio-Bibliotheken
 
 Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim ersten Öffnen und erneut über ?, Schnittmarker mit Mausbedienung, Vorhören und Speichern. Android enthält eine eigene Kurzanleitung. Die Update-Funktion unten links und im Infobereich lädt das neueste stabile GitHub-Release, prüft SHA-256 und öffnet den Installer. Sounds und Einstellungen bleiben erhalten.
 
+**Neu in 1.4.1:** Die Installation über den Update-Knopf ist repariert. Das Setup gibt sein geerbtes Arbeitsverzeichnis frei, bevor es den Programmordner austauscht. Falls ein 1.4.0-Setup noch mit einer Dateisperre offen ist, dieses Fenster zuerst schließen und den aktuellen Installer starten.
+
 **Neu in 1.4.0:** Die ganze Soundkachel spielt ab; das Zahnrad öffnet ausschließlich die Bearbeitung. Die Seitenleiste startet geschlossen und lässt sich per X schließen. Der Soundbereich nutzt dann die freie Breite. Gold markiert nur tatsächlich spielende Sounds. **Umsortieren** bleibt erhalten, auch zwischen Bänken und mit automatischer Übernahme auf dem Handy.
 
 Der Stift ändert den Anzeigenamen unabhängig vom Dateinamen. Start, Ende und Pegel sind Entwürfe; **Speichern** übernimmt sie zusammen, **Zurücksetzen** lädt die zuletzt gespeicherten Werte. Beim Schließen oder Wechseln erscheinen Speichern, Verwerfen und Abbrechen. **Sound ersetzen** bietet eine Audiodatei oder einen MyInstants-Link; der Mülleimer leert nur den bearbeiteten Slot und erhält Originaldateien. **Audio-Einstellungen** unten rechts öffnet das globale Routing.
