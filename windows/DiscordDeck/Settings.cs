@@ -1,13 +1,16 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 namespace DiscordDeck;
-public sealed class SoundSlot { public string SourceUrl {get;set;}="";public string Name {get;set;}=""; public string File {get;set;}="";public float Volume {get;set;}=.65f; }
+public sealed class SoundSlot { public string SourceUrl {get;set;}="";public string Name {get;set;}=""; public string File {get;set;}="";public float Volume {get;set;}=.65f;
+ // Abspielbereich in Sekunden; TrimEnd 0 = bis zum Ende. Die Datei selbst bleibt unverändert.
+ public double TrimStart {get;set;} public double TrimEnd {get;set;} }
 public sealed class Settings {
  public string ServerId {get;set;}=Guid.NewGuid().ToString();
  public string MobileToken {get;set;}=Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
  public bool MonitorEnabled {get;set;}=true;
  public string MonitorId {get;set;}="";
  public bool AudioEnabled {get;set;}=false;
+ public string Language {get;set;}="de"; public bool TourDone {get;set;}
  public string OutputId {get;set;}="";public string MicrophoneId {get;set;}="";public bool MixMicrophone {get;set;}=true;
  public float MicrophoneVolume {get;set;}=1;public float MasterVolume {get;set;}=.7f;
  public string Token {get;set;}=Convert.ToHexString(RandomNumberGenerator.GetBytes(32));

@@ -7,9 +7,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets/sardine.ico</ApplicationIcon>
-    <AssemblyTitle>Sardinöööses Discord Deck</AssemblyTitle>
-    <Product>Sardinöööses Discord Deck</Product>
-    <Version>1.1.0</Version>
+    <AssemblyTitle>Sardinöööses Soundboard</AssemblyTitle>
+    <Product>Sardinöööses Soundboard</Product>
+    <Version>1.2.0</Version>
     <DebugType>none</DebugType>
   </PropertyGroup>
 

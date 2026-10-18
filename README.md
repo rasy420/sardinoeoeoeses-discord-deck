@@ -1,8 +1,18 @@
-# Sardinöööses Discord Deck
+# Sardinöööses Soundboard · SSB
+
+<a href="https://github.com/rasy420/sardinoeoeoeses-soundboard/releases/latest/download/SSB-Setup.exe"><img src="docs/download.svg" alt="KOMPLETTEN INSTALLER HERUNTERLADEN" width="900"></a>
+
+**[⬇ Kompletten Windows-Installer herunterladen](https://github.com/rasy420/sardinoeoeoeses-soundboard/releases/latest/download/SSB-Setup.exe)** · **[Android-App herunterladen](https://github.com/rasy420/sardinoeoeoeses-soundboard/releases/latest/download/SSB-Android.apk)**
+
+Windows 10/11 (64 Bit). Der Installer enthält .NET-Laufzeit, Audio-Bibliotheken, yt-dlp, FFmpeg/FFprobe, Deno und Android-App. Kein SDK erforderlich. Fehlt ein virtuelles Audiogerät, bietet das Setup den Download des originalen VB-CABLE-Installers vom Hersteller an. Windows fragt für Treiber und Firewall nach Administratorrechten; die Treiberinstallation bestätigst du im VB-Audio-Fenster. Ein Neustart kann erforderlich sein.
+
+Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim ersten Öffnen und erneut über ?, Schnittmarker mit Mausbedienung, Vorhören und Speichern. Android enthält eine eigene Kurzanleitung. **Updates suchen** unten links und im Infobereich lädt das neueste stabile GitHub-Release, prüft SHA-256 und öffnet den Installer. Sounds und Einstellungen bleiben erhalten.
+
+Die Soundnamen im Bild sind Beispiele. Neue Installationen enthalten **keine vorbelegten Sounds und keine Audiodateien**.
 
 Soundboard für Discord unter Windows – mit Android-App als Fernbedienung im WLAN.
 
-![Screenshot](windows/DiscordDeck/Assets/design-reference.png)
+![Screenshot](docs/screenshot.png)
 
 ## Funktionen
 - 100 Sound-Plätze in 5 Bänken, Pegel pro Sound, „Alle Sounds stoppen“
@@ -21,7 +31,7 @@ Soundboard für Discord unter Windows – mit Android-App als Fernbedienung im W
 | `android` | Android-App (Java, Gradle) |
 | `streamdock-plugin` | Plugin für Stream Controller / StreamDock |
 
-## Voraussetzungen
+## Voraussetzungen für Entwickler (im Installer bereits enthalten)
 - Windows 10/11, .NET 8 SDK
 - Virtuelles Audiokabel, z. B. [VB-CABLE](https://vb-audio.com/Cable/)
 - Für den Import: `yt-dlp.exe`, `ffmpeg.exe`, `ffprobe.exe`, `deno.exe` im Ordner `tools\` neben `DiscordDeck.exe` (nicht im Repo enthalten)
@@ -44,3 +54,11 @@ gradle assembleRelease   # danach mit eigenem Keystore signieren
 
 ## Ports
 TCP 47836 (Handy-Verbindung), UDP 47837 (Suche im WLAN), lokal 127.0.0.1:47835 (API). Der Installer legt bei Bedarf Firewall-Regeln an.
+
+## Updates veröffentlichen
+
+Stabiles Release mit Tag `vMAJOR.MINOR.PATCH` erstellen. Installer immer **SSB-Setup.exe**, Android-App **SSB-Android.apk** nennen. Windows-Assembly-Version anpassen. Der Updater verlangt die SHA-256-Prüfsumme, die GitHub für das Release-Asset liefert. Drafts und Vorabversionen werden ignoriert.
+
+## Prüfen
+
+`--update-test`, `--trim-test`, `--tour-test`, `--ui-test`, `--design-test`, `--lan-test`, `--gain-test`, `--import-test`. `DISCORDDECK_HOME` auf einen leeren Testordner setzen und die normale App vorher beenden, da Tests dieselben Ports nutzen. JSON-Ergebnisse auf `ok` prüfen.

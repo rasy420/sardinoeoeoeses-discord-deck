@@ -21,7 +21,7 @@ public sealed class LanServer:IDisposable {
   var builder=WebApplication.CreateSlimBuilder();builder.Logging.ClearProviders();builder.WebHost.UseUrls($"http://0.0.0.0:{Port}");web=builder.Build();
   web.Use(async(ctx,next)=>{if(!IsLocal(ctx.Connection.RemoteIpAddress)){ctx.Response.StatusCode=403;return;}await next(ctx);});
   web.MapGet("/discover",()=>Identity());
-  web.MapGet("/download/android",()=>{var path=Path.Combine(AppContext.BaseDirectory,"DiscordDeck-Android.apk");return File.Exists(path)?Results.File(path,"application/vnd.android.package-archive","DiscordDeck-Android.apk"):Results.NotFound();});
+  web.MapGet("/download/android",()=>{var path=Path.Combine(AppContext.BaseDirectory,"DiscordDeck-Android.apk");return File.Exists(path)?Results.File(path,"application/vnd.android.package-archive","SSB-Android.apk"):Results.NotFound();});
   web.MapPost("/pair",async(HttpContext ctx)=>{
    if(ctx.Request.ContentLength is null or >1024)return Results.BadRequest();
    PairRequest? request;try{request=await ctx.Request.ReadFromJsonAsync<PairRequest>();}catch{return Results.BadRequest();}
