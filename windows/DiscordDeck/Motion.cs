@@ -5,7 +5,7 @@ namespace DiscordDeck;
 public sealed partial class MainForm {
  // Hinweis oben auf „Handy verbinden“, solange sich noch nie ein Handy gemeldet hat (nicht während der Einführung).
  internal bool PhoneHint=>!PhoneOnline&&tourStep<0;
- internal string PhoneButtonText=>!PhoneOnline&&settings.PhoneConnected?T("    App öffnen","    Open app"):T("    Handy verbinden","    Connect phone");
+ internal string PhoneButtonText=>PhoneOnline?T("    Handy verbunden","    Phone connected"):settings.PhoneConnected?T("    App öffnen","    Open app"):T("    Handy verbinden","    Connect phone");
  internal void NotePhoneConnected(){if(settings.PhoneConnected)return;settings.PhoneConnected=true;settings.Save();deck.Invalidate();}
 }
 

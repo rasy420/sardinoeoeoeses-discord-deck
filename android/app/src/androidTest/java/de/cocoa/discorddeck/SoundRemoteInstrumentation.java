@@ -24,6 +24,9 @@ public class SoundRemoteInstrumentation extends Instrumentation {
   waitFor(()->app.pads[0].isEnabled(),"Paired status not received");
   check(ui(()->app.help.getText().toString().equals("?")&&app.help.getWidth()<=app.dp(44)&&app.help.getCurrentTextColor()==MainActivity.GREEN),"Small golden header help");
   check(ui(()->("Bearbeiten".equals(app.edit.getText().toString())||"Edit".equals(app.edit.getText().toString()))&&app.edit.getHeight()>0&&app.edit.getHeight()<=app.dp(36)&&app.colorBar.getVisibility()==View.GONE),"Small edit button, colors hidden");
+  check(ui(()->app.state.getParent()==app.edit.getParent()&&app.state.getTextSize()<app.edit.getTextSize()&&app.state.getWidth()>app.dp(100)&&app.state.getHeight()==app.edit.getHeight()&&app.state.getTop()==app.edit.getTop()&&app.state.getRight()<=app.edit.getLeft()),"Compact status shares the edit row without overlap");
+  check(ui(()->app.state.getText().toString().contains(server.name())),"Connected PC name remains visible");
+  check(ui(()->!contains((ViewGroup)app.findViewById(android.R.id.content),"PC-IP")&&!contains((ViewGroup)app.findViewById(android.R.id.content),"Suchen")&&!contains((ViewGroup)app.findViewById(android.R.id.content),"PC IP")),"Manual IP and search controls removed");
   runOnMainSync(()->app.edit.performClick());
   check(ui(()->app.coloring&&("Fertig".equals(app.edit.getText().toString())||"Done".equals(app.edit.getText().toString()))&&app.colorBar.getVisibility()==View.VISIBLE),"Edit opens ten colors");
   check(ui(()->app.swatches.length==10&&(app.swatches[9].getContentDescription().toString().contains("Weiß")||app.swatches[9].getContentDescription().toString().contains("White"))),"Ten named colors");
@@ -41,14 +44,15 @@ public class SoundRemoteInstrumentation extends Instrumentation {
   check(yellow.getColor().getDefaultColor()==TileBorders.PALETTE[3],"Filled tile is fully yellow");
   check(ui(()->app.pads[3].getCurrentTextColor()==TileBorders.DARK_TEXT&&TileBorders.contrast(TileBorders.PALETTE[3],app.pads[3].getCurrentTextColor())>=4.5),"Text on yellow switches to dark and stays readable");
   check(ui(()->app.pads[4].getCurrentTextColor()==TileBorders.textOn(TileBorders.PALETTE[6])&&app.pads[9].getCurrentTextColor()==MainActivity.TEXT),"Blue tile readable, uncolored tiles keep white text");
+  check(ui(()->app.pads[3].getTypeface().isBold()&&app.pads[4].getTypeface().isBold()&&!app.pads[9].getTypeface().isBold()),"Only filled colored tiles use bold labels");
   // Abgleich mit dem echten PC in beide Richtungen.
   long syncEnd=System.currentTimeMillis()+6000;JSONObject synced=null;while(System.currentTimeMillis()<syncEnd){synced=app.request(server,"/status","GET",null,true);org.json.JSONArray ss=synced.getJSONArray("slots");if(synced.optBoolean("tileFill")&&ss.getJSONObject(3).optInt("color")==TileBorders.PALETTE[3]&&ss.getJSONObject(4).optInt("color")==TileBorders.PALETTE[6])break;synced=null;Thread.sleep(100);}
   check(synced!=null&&synced.getBoolean("colorSync"),"Phone colors and Vollflächig arrive on the real PC");
   String greenId=app.tiles.ids[5];app.request(server,"/tile-color/"+greenId+"/5","POST",null,true);
   waitFor(()->app.borders[5]==TileBorders.PALETTE[4]&&((android.graphics.drawable.GradientDrawable)((android.graphics.drawable.RippleDrawable)app.pads[5].getBackground()).getDrawable(0)).getColor().getDefaultColor()==TileBorders.PALETTE[4],"Color set on the PC appears on the phone");
-  app.request(server,"/tile-fill/0","POST",null,true);waitFor(()->!app.fill&&app.rimMode.getCurrentTextColor()==MainActivity.BG&&app.pads[3].getCurrentTextColor()==MainActivity.TEXT,"Rand set on the PC switches the phone");
+  app.request(server,"/tile-fill/0","POST",null,true);waitFor(()->!app.fill&&app.rimMode.getCurrentTextColor()==MainActivity.BG&&app.pads[3].getCurrentTextColor()==MainActivity.TEXT&&!app.pads[3].getTypeface().isBold(),"Rand set on the PC switches the phone");
   app.request(server,"/tile-fill/1","POST",null,true);waitFor(()->app.fill&&app.pads[3].getCurrentTextColor()==TileBorders.DARK_TEXT,"Vollflächig set on the PC switches the phone");
-  app.request(server,"/tile-color/"+greenId+"/0","POST",null,true);waitFor(()->app.borders[5]==0,"Color removed on the PC disappears on the phone");
+  app.request(server,"/tile-color/"+greenId+"/0","POST",null,true);waitFor(()->app.borders[5]==0&&!app.pads[5].getTypeface().isBold(),"Color removed on the PC disappears on the phone");
   boolean rejected=false;try{app.request(server,"/tile-color/"+greenId+"/11","POST",null,true);}catch(java.io.IOException e){rejected=true;}check(rejected,"Invalid color number rejected by the PC");
   shot("usb-fill.png");
   runOnMainSync(()->{app.pads[4].performClick();app.swatches[3].performClick();app.pads[3].performClick();app.rimMode.performClick();});

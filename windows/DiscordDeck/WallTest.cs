@@ -80,7 +80,7 @@ public sealed partial class MainForm {
    var phoneText=new List<int>();using(var b=Paint()){for(int x=1062;x<1178;x++)for(int y=20;y<32;y++){var c=At(b,x,y);if(c.R>200&&c.G>170&&c.B<150)phoneText.Add(x);}}
    Check(phoneText.Count>8,"Connect phone label is gold while highlighted");
    f.Dispatch("status",0);Check(!f.settings.PhoneConnected,"Plugin status call does not count as phone");
-   f.Dispatch("phone-status",0);Check(f.settings.PhoneConnected&&Settings.Load().PhoneConnected&&!f.PhoneHint,"First phone status removes the hint permanently");
+   f.Dispatch("phone-status",0);Check(f.settings.PhoneConnected&&Settings.Load().PhoneConnected&&!f.PhoneHint,"First phone status removes the hint permanently");Check(f.PhoneButtonText.Trim()=="Handy verbunden","Online phone label says Handy verbunden");
    using(var b=Paint()){int gold=0;for(int x=1062;x<1178;x++)for(int y=20;y<32;y++){var c=At(b,x,y);if(c.R>200&&c.G>170&&c.B<150)gold++;}Check(gold==0,"Connect phone label is normal after a phone connected");}
    // Lampe im Knopf: grün solange das Handy sich meldet, sonst gelb; Kopplungsfenster mit Warte-Lampe
    using(var b=Paint("phone-lamp-green")){var c=At(b,1188,31);Check(c.G>170&&c.R<130,"Lamp in Connect phone is green while the phone reports");}

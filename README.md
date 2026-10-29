@@ -8,7 +8,7 @@ Windows 10/11 (64 Bit). Der Installer enthält .NET-Laufzeit, Audio-Bibliotheken
 
 Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim ersten Öffnen und erneut über ?, Schnittmarker mit Mausbedienung, Vorhören und Speichern. Android enthält eine eigene Kurzanleitung. Die Update-Funktion unten links und im Infobereich lädt das neueste stabile GitHub-Release, prüft SHA-256 und öffnet den Installer. Sounds und Einstellungen bleiben erhalten.
 
- **Android 1.4.5:** Oben ein kleiner Knopf **Bearbeiten**. Eine von zehn Farben wählen, dann Kacheln antippen. Nur der Rand wird farbig, die Fläche bleibt dunkel. Dieselbe Farbe nochmal entfernt den Rand. Die Farben bleiben auf dem Handy gespeichert. Die PC-App bleibt bei 1.4.7.
+**PC 1.4.11 / Android 1.4.8:** „Verbunden · PC-Name“ steht kompakt neben „Bearbeiten“. Das manuelle IP-Feld und der Suchknopf entfallen; die automatische Suche bleibt aktiv. Farbige Kacheln im Vollflächenmodus haben eine kräftigere Schrift, im Randmodus und ohne Farbe bleibt die bisherige Schrift erhalten. Der PC zeigt bei aktiver Handyverbindung „Handy verbunden“ mit grüner LED; getrennte bekannte Handys zeigen „App öffnen“. Farben und Rand/Vollfläche werden weiterhin in beide Richtungen synchronisiert.
 
 Ein Klick auf einen freien Soundplatz öffnet die Einstellungen nicht. Dafür ist das Zahnrad auf der Kachel da, auch wenn der Platz leer ist.
 
