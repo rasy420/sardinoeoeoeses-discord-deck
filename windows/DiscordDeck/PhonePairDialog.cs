@@ -17,8 +17,8 @@ public sealed partial class MainForm {
 
  sealed partial class ReferenceDeck {
   internal static RectangleF PhoneLampBounds=>new(1183,26,10,10);
-  internal void InvalidatePhoneLamp()=>InvalidateLogical(RectangleF.Inflate(PhoneLampBounds,3,3));
-  void PhoneLamp(Graphics g){var r=PhoneLampBounds;var c=owner.PhoneOnline?PhonePairDialog.Green:PhonePairDialog.Yellow;using(var glow=new SolidBrush(Color.FromArgb(70,c)))g.FillEllipse(glow,RectangleF.Inflate(r,2.5f,2.5f));using var b=new SolidBrush(c);g.FillEllipse(b,r);}
+  internal void InvalidatePhoneLamp()=>InvalidateLogical(Moved(new RectangleF(1025,5,182,51),DX,0));
+  void PhoneLamp(Graphics g){if(!owner.PhoneOnline)return;var r=PhoneLampBounds;var c=PhonePairDialog.Green;using(var glow=new SolidBrush(Color.FromArgb(70,c)))g.FillEllipse(glow,RectangleF.Inflate(r,2.5f,2.5f));using var b=new SolidBrush(c);g.FillEllipse(b,r);}
  }
 }
 

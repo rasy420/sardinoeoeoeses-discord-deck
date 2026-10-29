@@ -30,6 +30,15 @@ public sealed partial class MainForm {
   Check(!Post("/play-sound/"+Guid.NewGuid()).GetProperty("ok").GetBoolean(),"Deleted ID rejected without playing another sound");
   Check(Await(http.PostAsync("/stop-sound/invalid",null)).StatusCode==System.Net.HttpStatusCode.BadRequest,"Invalid ID rejected");
   Post("/play/1");Check(form.audio.Playing==1,"Older Android playback route retained");Post("/stop");Check(form.audio.Playing==0,"Older Android stop route retained");
+  // Kachelfarben vom Handy: per stabiler ID, 1 bis 10 aus der Palette, 0 entfernt.
+  var colored=form.settings.Slots[4];Check(Post("/tile-color/"+colored.Id+"/4").GetProperty("ok").GetBoolean()&&colored.TileColor==TilePalette.Colors[3]&&Settings.Load().Slots[4].TileColor==TilePalette.Colors[3],"Phone sets a tile color on the PC and it is saved");
+  Check(Post("/tile-color/"+colored.Id+"/4").GetProperty("ok").GetBoolean()&&colored.TileColor==TilePalette.Colors[3],"Repeated phone color request does not toggle it off");
+  Check(Post("/tile-fill/1").GetProperty("ok").GetBoolean()&&form.settings.TileFill&&Settings.Load().TileFill,"Phone switches the PC to Vollflächig");
+  var synced=JsonSerializer.Deserialize<JsonElement>(Await(http.GetStringAsync("/status")));Check(synced.GetProperty("colorSync").GetBoolean()&&synced.GetProperty("tileFill").GetBoolean()&&synced.GetProperty("slots")[4].GetProperty("color").GetInt32()==TilePalette.Colors[3]&&synced.GetProperty("slots")[0].GetProperty("color").GetInt32()==0,"Status sends colors and mode to the phone");
+  form.MoveSound(4,7);Check(JsonSerializer.Deserialize<JsonElement>(Await(http.GetStringAsync("/status"))).GetProperty("slots")[7].GetProperty("color").GetInt32()==TilePalette.Colors[3],"Color follows the sound when it is moved on the PC");
+  Check(Post("/tile-color/"+colored.Id+"/0").GetProperty("ok").GetBoolean()&&colored.TileColor==0,"Phone removes a tile color");Post("/tile-fill/0");Check(!form.settings.TileFill,"Phone switches back to Rand");
+  Check(Await(http.PostAsync("/tile-color/"+colored.Id+"/11",null)).StatusCode==System.Net.HttpStatusCode.BadRequest&&Await(http.PostAsync("/tile-fill/2",null)).StatusCode==System.Net.HttpStatusCode.BadRequest&&!Post("/tile-color/"+Guid.NewGuid()+"/3").GetProperty("ok").GetBoolean(),"Invalid colors, modes and IDs rejected");
+  using(var anon=new HttpClient{BaseAddress=new Uri("http://127.0.0.1:47846")})Check(Await(anon.PostAsync("/tile-color/"+colored.Id+"/3",null)).StatusCode==System.Net.HttpStatusCode.Forbidden&&Await(anon.PostAsync("/tile-fill/1",null)).StatusCode==System.Net.HttpStatusCode.Forbidden&&colored.TileColor==0&&!form.settings.TileFill,"Unpaired requests cannot change colors");
   File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"mobile-stop-test.json"),JsonSerializer.Serialize(new{ok=true,checks},new JsonSerializerOptions{WriteIndented=true}));
  }
 }

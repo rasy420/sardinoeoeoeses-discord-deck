@@ -46,7 +46,7 @@ public sealed partial class MainForm {
    // Ende der Wand: Slot 100 erreichbar, nicht über das Ende hinaus
    for(int i=0;i<60;i++)Mouse("OnMouseWheel",700,500,-120);Settle();
    Check(f.scrollY==f.deck.MaxScroll&&f.bank==4,"Wheel stops at the end of the wall in bank 5");
-   var last=f.deck.TileBounds(99);Check(last.Bottom<=ReferenceDeck.ViewBottom&&last.Top>=ReferenceDeck.ViewTop,"Slot 100 is fully visible at the end");
+   var last=f.deck.TileBounds(99);Check(last.Bottom<=f.deck.ViewBottom&&last.Top>=ReferenceDeck.ViewTop,"Slot 100 is fully visible at the end");
    for(int i=0;i<60;i++)Mouse("OnMouseWheel",700,500,120);Settle();Check(f.scrollY==0&&f.bank==0,"Wheel back up reaches slot 1 and bank 1");
    // Bank links anklicken: weich dorthin, Bank sofort gold
    Click(110,123+3*64+20);Check(f.bank==3,"Clicking bank 4 marks it immediately");using(var b=Paint())Check(GoldBank(b,3),"Clicked bank is gold during the animation");
@@ -69,13 +69,14 @@ public sealed partial class MainForm {
    Check(ring.Max()-ring.Min()>40,"Ring around Start audio visibly pulses");
    using(var b=Paint("pulse"))Check(At(b,1310,946).R>200,"Start audio stays gold");
    f.ToggleAudio();Pump(300);Check(f.audio.Running,"Audio starts");
-   f.settings.PhoneConnected=true;Paint().Dispose();Pump(200);Check(!pulse.Enabled,"Pulse stops after audio starts and phone is known");
+   using(var b=Paint("audio-active-green")){var c=At(b,283,954);Check(c.G>170&&c.R<100,"Audio active LED is green");}
+   f.Dispatch("phone-status",0);Paint().Dispose();Pump(200);Check(!pulse.Enabled,"Pulse stops after audio starts and phone is known");
    var after=new List<int>();for(int i=0;i<6;i++){using var b=Paint();var c=At(b,1302-5,938+24);after.Add(c.R+c.G);Pump(90);}Check(after.Max()-after.Min()<6,"No ring after Start audio was pressed");
    f.ToggleAudio();Pump(200);
 
    // Handy verbinden hervorgehoben, bis sich einmal ein Handy meldet
-   f.settings.PhoneConnected=false;f.audio.StopSounds();
-   using(var b=Paint("phone-hint")){var c=At(b,1031+150,11+30);Check(f.PhoneHint,"Phone hint active when no phone ever connected");}
+   f.settings.PhoneConnected=false;f.lastPhoneSeen=DateTime.MinValue;f.CheckPhoneOnline();f.audio.StopSounds();
+   using(var b=Paint("phone-hint")){var c=At(b,1031+150,11+30);Check(f.PhoneHint&&f.PhoneButtonText.Trim()=="Handy verbinden","Never connected phone keeps Connect phone label");}
    var phoneText=new List<int>();using(var b=Paint()){for(int x=1062;x<1178;x++)for(int y=20;y<32;y++){var c=At(b,x,y);if(c.R>200&&c.G>170&&c.B<150)phoneText.Add(x);}}
    Check(phoneText.Count>8,"Connect phone label is gold while highlighted");
    f.Dispatch("status",0);Check(!f.settings.PhoneConnected,"Plugin status call does not count as phone");
@@ -83,8 +84,8 @@ public sealed partial class MainForm {
    using(var b=Paint()){int gold=0;for(int x=1062;x<1178;x++)for(int y=20;y<32;y++){var c=At(b,x,y);if(c.R>200&&c.G>170&&c.B<150)gold++;}Check(gold==0,"Connect phone label is normal after a phone connected");}
    // Lampe im Knopf: grün solange das Handy sich meldet, sonst gelb; Kopplungsfenster mit Warte-Lampe
    using(var b=Paint("phone-lamp-green")){var c=At(b,1188,31);Check(c.G>170&&c.R<130,"Lamp in Connect phone is green while the phone reports");}
-   f.lastPhoneSeen=DateTime.UtcNow-TimeSpan.FromSeconds(5);f.CheckPhoneOnline();Check(!f.PhoneOnline,"Phone counts as offline after 4 s without status");
-   using(var b=Paint("phone-lamp-yellow")){var c=At(b,1188,31);Check(c.R>220&&c.G>160&&c.B<100,"Lamp turns yellow when the phone is gone");}
+   f.lastPhoneSeen=DateTime.UtcNow-TimeSpan.FromSeconds(5);f.CheckPhoneOnline();Check(!f.PhoneOnline,"Phone counts as offline after 4 s without status");Check(f.PhoneButtonText.Trim()=="App öffnen"&&f.PhoneHint,"Known offline phone shows Open app with gold pulse");Check(Settings.Load().PhoneConnected,"Phone history survives saving and loading across updates");
+   using(var b=Paint("phone-lamp-yellow")){var c=At(b,1188,31);Check(!(c.R>220&&c.G>160&&c.B<100),"No yellow lamp when the phone is gone");}
    using(var d=new PhonePairDialog(f,"123456")){f.pairDialog=d;d.CreateControl();
     var texts=new List<string>();void Walk(Control c){texts.Add(c.Text);foreach(Control k in c.Controls)Walk(k);}Walk(d);
     Check(texts.Any(t=>t.StartsWith("Nur bei der ersten Verbindung nötig")),"Dialog says the code is only needed the first time");
@@ -97,7 +98,7 @@ public sealed partial class MainForm {
     f.pairDialog=null;d.Close();}
    f.Dispatch("phone-status",0);var watch=typeof(MainForm).GetField("phoneWatch",flags)!.GetValue(f) as System.Windows.Forms.Timer;Check(watch!=null&&watch.Enabled,"Phone watch timer runs");
    f.lastPhoneSeen=DateTime.UtcNow-TimeSpan.FromSeconds(3.6);Check(f.phoneWasOnline,"Lamp is green before the timeout");Pump(1300);Check(!f.phoneWasOnline,"Timer switches the lamp off by itself");
-   using(var b=Paint()){var c=At(b,1188,31);Check(c.R>220&&c.G>160&&c.B<100,"Lamp yellow again after the timer noticed it");}
+   using(var b=Paint()){var c=At(b,1188,31);Check(!(c.R>220&&c.G>160&&c.B<100),"No yellow lamp after timeout");}
 
    // YouTube-Knopf im YouTube-Rot mit weißem Logo
    using(var b=Paint("youtube")){var bg=At(b,200,712);Check(bg.R>180&&bg.G<60&&bg.B<80,"YouTube button is red");var logo=At(b,19+16,707+24);Check(logo.R>240&&logo.G>240&&logo.B>240,"White logo on the YouTube button");var play=At(b,19+13+15,707+24);Check(play.R>200&&play.G<60,"Red play triangle in the logo");}

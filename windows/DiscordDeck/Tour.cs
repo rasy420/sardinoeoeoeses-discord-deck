@@ -8,7 +8,7 @@ public sealed partial class MainForm {
  internal sealed record TourStep(string Title,string Text,RectangleF[] Spots);
  internal static TourStep[] TourSteps()=>new TourStep[]{
   new(T("Willkommen!","Welcome!"),T("Schön, dass du das Sardinöööses Soundboard nutzt. Diese kurze Tour zeigt dir in ein paar Schritten, wie alles funktioniert. Du kannst sie jederzeit über den „?“-Knopf oben wieder öffnen.","Thanks for using the Sardinöööses Soundboard. This short tour shows you how everything works in a few steps. You can reopen it any time with the “?” button at the top."),Array.Empty<RectangleF>()),
-  new(T("Sound-Bänke","Sound banks"),T("Hier wechselst du zwischen 5 Bänken mit je 20 Sounds – insgesamt 100 Plätze. Über Bearbeiten unter dem Stoppen-Knopf verschiebst du Sounds und ganze Bänke. Nur dann erscheinen Stifte zum Umbenennen der Bänke. Während des Ziehens links über eine Bank halten, um sie zu wechseln. Das Handy übernimmt die Reihenfolge automatisch.","Switch between 5 banks with 20 sounds each – 100 slots in total. Edit below Stop lets you move sounds and entire banks. Pencils for renaming banks only appear in edit mode. Hold over a bank on the left while dragging to switch banks. Your phone receives the order automatically."),new RectangleF[]{new(10,119,227,311)}),
+  new(T("Sound-Bänke","Sound banks"),T("Hier wechselst du zwischen 5 Bänken mit je 20 Sounds – insgesamt 100 Plätze. Über Bearbeiten unter dem Stoppen-Knopf verschiebst du Sounds und ganze Bänke und färbst Kacheln als Rand oder vollflächig. Nur dann erscheinen Stifte zum Umbenennen der Bänke. Während des Ziehens links über eine Bank halten, um sie zu wechseln. Das Handy übernimmt die Reihenfolge automatisch.","Switch between 5 banks with 20 sounds each – 100 slots in total. Edit below Stop lets you move sounds and entire banks and color tiles as a border or filled. Pencils for renaming banks only appear in edit mode. Hold over a bank on the left while dragging to switch banks. Your phone receives the order automatically."),new RectangleF[]{new(10,119,227,311)}),
   new(T("Sound abspielen und auswählen","Play and select a sound"),T("Ein Klick auf die ganze Kachel spielt den Sound ab. Ein leerer Platz öffnet nichts. Über ⚙ öffnest du seine Einstellungen rechts, auch wenn noch kein Sound belegt ist. Ein Kachelklick schließt sie wieder. Ungespeicherte Änderungen musst du zuerst speichern. Das X schließt sie ebenfalls. Der Stift rechts ändert den Anzeigenamen, ohne die Datei umzubenennen.","Click anywhere on a tile to play it. An empty slot opens nothing. ⚙ opens its settings on the right, even when no sound is assigned. A tile click closes them again; save pending changes first. X also closes them. The pencil on the right changes the display name without renaming the file."),new RectangleF[]{new(269,191,300,128)}),
   new(T("Sound hinzufügen","Add a sound"),T("Über „Sound ersetzen“ wählst du eine Audiodatei oder einen MyInstants-Link. Links unten importierst du über „YouTube / TikTok“.","Use “Replace sound” to choose an audio file or a MyInstants link. Import via “YouTube / TikTok” at the bottom left."),new RectangleF[]{new(1186,297,334,57),new(15,703,219,56)}),
   new(T("Länge festlegen","Set the length"),T("Zieh die zwei goldenen Marker mit der Maus auf Start und Ende. ▶ hört den Ausschnitt vorher an – nur auf deinem Kopfhörer. ✓ Speichern übernimmt ihn, ⟲ setzt auf die zuletzt gespeicherten Werte zurück. Genaue Sekunden kannst du direkt in Start und Ende unter der Wellenform eingeben.","Drag the two gold markers to the start and end. ▶ previews the part – only on your headphones. ✓ Save keeps it, ⟲ resets to the last saved values. Enter exact seconds directly in Start and End below the waveform."),new RectangleF[]{new(1186,179,334,117),new(1186,442,334,48)}),
@@ -29,21 +29,23 @@ public sealed partial class MainForm {
    return step switch{
     1=>new[]{new RectangleF(10,119,227,311),RectangleF.Inflate(ReorderButtonBounds,4,4)},
     2=>new[]{RectangleF.Inflate(TileBounds(owner.selectedSound),4,4)},
-    5=>new[]{new RectangleF(GridRight-215,866,213,39)},
-    _=>TourSteps()[step].Spots
+    5=>new[]{new RectangleF(GridRight-215,866+DY,213,39)},
+    6=>new[]{new RectangleF(600,930+DY,926+DX,66),new RectangleF(15,447,219,56)},
+    // Kopfzeile rechts und das Feld rechts wandern mit dem rechten Rand.
+    _=>TourSteps()[step].Spots.Select(r=>r.X>=900?Moved(r,DX,0):r).ToArray()
    };
   }
   void DrawTour(Graphics g){
    var steps=TourSteps();int n=owner.tourStep;if(n<0||n>=steps.Length)return;var step=steps[n] with{Spots=TourSpots(n)};hits.Clear();
-   using(var dim=new Region(new RectangleF(0,0,1536,1024))){foreach(var s in step.Spots){using var p=Shape(s,12);dim.Exclude(p);}using var b=new SolidBrush(Color.FromArgb(185,4,8,11));g.FillRegion(b,dim);}
+   float LW=LogicalWidth,LH=LogicalHeight;using(var dim=new Region(new RectangleF(0,0,LW,LH))){foreach(var s in step.Spots){using var p=Shape(s,12);dim.Exclude(p);}using var b=new SolidBrush(Color.FromArgb(185,4,8,11));g.FillRegion(b,dim);}
    foreach(var s in step.Spots){using var p=Shape(s,12);using var glow=new Pen(Color.FromArgb(90,232,200,122),7);g.DrawPath(glow,p);using var pen=new Pen(green,2);g.DrawPath(pen,p);}
    const float w=430;float h=MeasureBody(g,step.Text,w-56)+196;RectangleF card;
-   if(step.Spots.Length==0)card=new((1536-w)/2,(1024-h)/2,w,h);
+   if(step.Spots.Length==0)card=new((LW-w)/2,(LH-h)/2,w,h);
    else{var s=step.Spots[0];float x,y;
-    if(s.Right+w+40<=1536&&s.Right<900){x=s.Right+28;y=s.Y;}
+    if(s.Right+w+40<=LW&&s.Right<900){x=s.Right+28;y=s.Y;}
     else if(s.X-w-28>=0){x=s.X-w-28;y=s.Y;}
-    else{x=Math.Clamp(s.X+s.Width/2-w/2,20,1536-w-20);y=s.Bottom+24;}
-    card=new(x,Math.Clamp(y,72,1024-h-20),w,h);}
+    else{x=Math.Clamp(s.X+s.Width/2-w/2,20,LW-w-20);y=s.Bottom+24;}
+    card=new(x,Math.Clamp(y,72,LH-h-20),w,h);}
    using(var shadow=new SolidBrush(Color.FromArgb(120,0,0,0))){using var p=Shape(new(card.X+6,card.Y+10,card.Width,card.Height),16);g.FillPath(shadow,p);}
    Box(g,card,C(33,44,52),C(20,28,34),16,C(86,104,116));
    TextAt(g,T($"S C H R I T T   {n+1}   V O N   {steps.Length}",$"S T E P   {n+1}   O F   {steps.Length}"),card.X+28,card.Y+24,12,green);

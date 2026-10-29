@@ -18,6 +18,10 @@ public class TileBordersTest {
   check(again[0]==red&&again[9]==purple&&again[50]==0&&again[99]==0);
   check("Rot".equals(TileBorders.name(red,false))&&"Red".equals(TileBorders.name(red,true))&&TileBorders.name(0,false).isEmpty());
   TileBorders.load(null,slots);check(slots[0]==red);
+  for(int c:TileBorders.PALETTE)check(TileBorders.contrast(c,TileBorders.textOn(c))>=4.5);
+  check(TileBorders.textOn(TileBorders.PALETTE[3])==TileBorders.DARK_TEXT&&TileBorders.textOn(TileBorders.PALETTE[9])==TileBorders.DARK_TEXT);
+  check(TileBorders.textOn(0xFF1A2A6C)==0xFFFFFFFF&&TileBorders.contrast(0xFFFFFFFF,0xFF000000)>20.9);
+  check(TileBorders.paletteNumber(0)==0&&TileBorders.paletteNumber(TileBorders.PALETTE[0])==1&&TileBorders.paletteNumber(TileBorders.PALETTE[9])==10&&TileBorders.paletteNumber(0xFF123456)==0);
   System.out.println("PASS "+n+" border checks");
  }
 }

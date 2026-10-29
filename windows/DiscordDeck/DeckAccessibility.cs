@@ -14,7 +14,7 @@ public sealed partial class MainForm {
    public override string DefaultAction=>"Activate";
    public override AccessibleRole Role=>AccessibleRole.PushButton;
    public override AccessibleObject? Parent=>deck.AccessibilityObject;
-   public override Rectangle Bounds{get{var r=deck.hits[index].rect;return deck.RectangleToScreen(new((int)(r.X*deck.Width/1536),(int)(r.Y*deck.Height/1024),(int)(r.Width*deck.Width/1536),(int)(r.Height*deck.Height/1024)));}}
+   public override Rectangle Bounds{get{var r=deck.hits[index].rect;float s=deck.UiScale;return deck.RectangleToScreen(new((int)(r.X*s),(int)(r.Y*s),(int)(r.Width*s),(int)(r.Height*s)));}}
    public override AccessibleStates State=>AccessibleStates.Focusable|(deck.Focused&&deck.focusHit==index?AccessibleStates.Focused:AccessibleStates.None);
    public override void DoDefaultAction(){if(index<deck.hits.Count)deck.owner.Try(deck.hits[index].action);}
   }

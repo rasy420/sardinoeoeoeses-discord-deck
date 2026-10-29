@@ -12,6 +12,8 @@ Neue Funktionen: Gold-Design, Deutsch/Englisch (DE / EN), Einführung beim erste
 
 Ein Klick auf einen freien Soundplatz öffnet die Einstellungen nicht. Dafür ist das Zahnrad auf der Kachel da, auch wenn der Platz leer ist.
 
+**Neu in 1.4.10:** Unter Bearbeiten färbst du Kacheln am PC mit denselben zehn Farben wie in der Handy-App, wahlweise als Rand (Standard) oder vollflächig. Bei hellen Farben wird die Schrift automatisch dunkel. Android 1.4.7 hat Alle Sounds stoppen als breite Leiste ganz unten und denselben Schalter Rand oder Vollflächig. Die Farben am PC und am Handy werden getrennt gespeichert.
+
 **Neu in 1.4.9:** Im Knopf Handy verbinden leuchtet eine Lampe: gelb, solange kein Handy verbunden ist, grün, sobald die Handy-App verbunden ist. Das Kopplungsfenster erklärt, dass der Code nur bei der ersten Verbindung nötig ist, und zeigt unten neben OK „Warte auf Handyverbindung …“, bis das Handy da ist.
 
 **Neu in 1.4.8:** Alle 100 Sounds bilden eine durchgehende, weich scrollbare Wand; die goldene Bank links wechselt beim Scrollen mit, ein Bankklick scrollt dorthin. Audio starten pulsiert, bis Audio läuft. Der YouTube/TikTok-Knopf ist rot und weiß. Handy verbinden ist hervorgehoben, solange noch nie ein Handy verbunden war. Neue Sounds auf freien Plätzen starten mit 150 % Lautstärke. Android 1.4.6 hat statt des Stopps auf der Kachel oben einen roten Knopf Alle Sounds stoppen; jedes Antippen spielt den Sound erneut.

@@ -4,13 +4,29 @@ namespace DiscordDeck;
 
 public sealed partial class MainForm {
  // Hinweis oben auf „Handy verbinden“, solange sich noch nie ein Handy gemeldet hat (nicht während der Einführung).
- internal bool PhoneHint=>!settings.PhoneConnected&&tourStep<0;
+ internal bool PhoneHint=>!PhoneOnline&&tourStep<0;
+ internal string PhoneButtonText=>!PhoneOnline&&settings.PhoneConnected?T("    App öffnen","    Open app"):T("    Handy verbinden","    Connect phone");
  internal void NotePhoneConnected(){if(settings.PhoneConnected)return;settings.PhoneConnected=true;settings.Save();deck.Invalidate();}
 }
 
 public sealed partial class MainForm {
  sealed partial class ReferenceDeck {
-  internal const float RowStep=135.5f,BankHeight=RowStep*5,ViewTop=190,ViewBottom=865;
+  internal const float RowStep=135.5f,BankHeight=RowStep*5,ViewTop=190;
+  // Fenstergröße: ein einheitlicher Maßstab ohne Verzerrung. Mehr Platz als 1536 × 1024 macht das Raster breiter und höher,
+  // rechte Teile wandern um DX nach rechts, untere um DY nach unten.
+  internal float UiScale=>Width<=0||Height<=0?1:Math.Min(Width/1536f,Height/1024f);
+  internal float LogicalWidth=>Width<=0?1536:Math.Max(1536,Width/UiScale);
+  internal float LogicalHeight=>Height<=0?1024:Math.Max(1024,Height/UiScale);
+  internal float DX=>LogicalWidth-1536;
+  internal float DY=>LogicalHeight-1024;
+  internal float PanelLeft=>1169+DX;
+  internal float ViewBottom=>865+DY;
+  internal float SliderWidth=>401+DX;
+  internal Point ToClient(float x,float y)=>new((int)(x*UiScale),(int)(y*UiScale));
+  PointF shift;
+  // Eine Gruppe verschoben zeichnen: Klickflächen und Mausprüfungen beim Zeichnen gelten dann für die neue Lage.
+  void Shifted(Graphics g,float dx,float dy,Action draw){var state=g.Save();var before=shift;var realMouse=mouse;g.TranslateTransform(dx,dy);shift=new(before.X+dx,before.Y+dy);mouse=new(realMouse.X-dx,realMouse.Y-dy);try{draw();}finally{shift=before;mouse=realMouse;g.Restore(state);}}
+  protected override void WndProc(ref Message m){if(m.Msg==0x84&&owner.ResizeHit(owner.PointToClient(new Point(unchecked((short)(long)m.LParam),unchecked((short)((long)m.LParam>>16)))))!=0){m.Result=(IntPtr)(-1);return;}base.WndProc(ref m);}
   internal RectangleF Viewport=>new(263,ViewTop,GridRight-263+12,ViewBottom-ViewTop);
   internal RectangleF ScrollbarArea=>new(GridRight-12,ViewTop,12,ViewBottom-ViewTop);
   // Ziel der weichen Scrollbewegung; lockedBank hält die angeklickte Bank gold, bis die Bewegung dort ankommt.
@@ -19,11 +35,12 @@ public sealed partial class MainForm {
   internal bool Scrolling=>motion.Enabled;
   void InitMotion(){
    motion.Tick+=(_,_)=>StepScroll();
-   pulse.Tick+=(_,_)=>{if(owner.audio.Running&&!owner.PhoneHint){pulse.Stop();return;}if(!Visible||owner.WindowState==FormWindowState.Minimized)return;if(!owner.audio.Running)InvalidateLogical(RectangleF.Inflate(AudioButtonBounds,14,14));if(owner.PhoneHint)InvalidateLogical(RectangleF.Inflate(PhoneButtonBounds,12,12));};
+   pulse.Tick+=(_,_)=>{if(owner.audio.Running&&!owner.PhoneHint){pulse.Stop();return;}if(!Visible||owner.WindowState==FormWindowState.Minimized)return;if(!owner.audio.Running)InvalidateLogical(Moved(RectangleF.Inflate(AudioButtonBounds,14,14),DX,DY));if(owner.PhoneHint)InvalidateLogical(Moved(RectangleF.Inflate(PhoneButtonBounds,12,12),DX,0));};
   }
   internal static RectangleF AudioButtonBounds=>new(1302,938,209,48);
   internal static RectangleF PhoneButtonBounds=>new(1031,11,170,39);
-  void InvalidateLogical(RectangleF r)=>Invalidate(Rectangle.FromLTRB((int)(r.Left*Width/1536f)-1,(int)(r.Top*Height/1024f)-1,(int)Math.Ceiling(r.Right*Width/1536f)+1,(int)Math.Ceiling(r.Bottom*Height/1024f)+1));
+  static RectangleF Moved(RectangleF r,float dx,float dy)=>new(r.X+dx,r.Y+dy,r.Width,r.Height);
+  void InvalidateLogical(RectangleF r){float s=UiScale;Invalidate(Rectangle.FromLTRB((int)(r.Left*s)-1,(int)(r.Top*s)-1,(int)Math.Ceiling(r.Right*s)+1,(int)Math.Ceiling(r.Bottom*s)+1));}
   // Ruhige Position übernehmen (Sprung ohne Animation), Bank aus der Position ableiten.
   internal void SnapScroll(){motion.Stop();lockedBank=-1;owner.scrollY=Math.Clamp(owner.scrollY,0,MaxScroll);scrollTarget=owner.scrollY;owner.bankIndex=BankAtScroll(owner.scrollY);Invalidate();}
   internal static int BankAtScroll(float y)=>Math.Clamp((int)((y+BankHeight/2)/BankHeight),0,4);

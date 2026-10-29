@@ -6,7 +6,7 @@ public sealed partial class MainForm {
  bool sorting;
  void ToggleSorting(){
   if(sorting&&soundEditor!=null&&ReferenceEquals(soundEditor,bankNameEditor)){soundEditor.Dispose();soundEditor=null;bankNameEditor=null;editError="";}sorting=!sorting;deck.CancelReorder();
-  status.Text="Sortieren: "+(sorting?T("Sounds oder ganze Bänke ziehen. Stifte an den Bänken ändern deren Namen.","Drag sounds or entire banks. The pencils beside banks rename them."):T("Reihenfolge gespeichert – auch auf dem Handy.","Order saved – also on your phone."));deck.Invalidate();
+  status.Text="Sortieren: "+(sorting?T("Sounds oder Bänke ziehen. Farbe links wählen und Kacheln anklicken zum Färben.","Drag sounds or banks. Pick a color on the left and click tiles to color them."):T("Reihenfolge gespeichert – auch auf dem Handy.","Order saved – also on your phone."));deck.Invalidate();
  }
  internal bool MoveSound(int from,int to){
   if(from<0||to<0||from>=settings.Slots.Count||to>=settings.Slots.Count||from==to)return false;
@@ -25,11 +25,11 @@ public sealed partial class MainForm {
   int hoveredBank=-1;DateTime hoverSince,lastScroll;
   readonly System.Windows.Forms.Timer reorderTimer=new(){Interval=100};
   internal int Columns=>4;
-  internal float GridRight=>1524;
+  internal float GridRight=>1524+DX;
   internal float MaxScroll=>4*BankHeight;
   internal RectangleF TileBounds(int index){float step=(GridRight-273)/Columns;return new(273+index%Columns*step,195+index/Columns*RowStep-owner.scrollY,step-13,120);}
   internal int TileAt(PointF p){
-   if(owner.soundPanelOpen&&p.X>=1169||!Viewport.Contains(p))return -1;
+   if(owner.soundPanelOpen&&p.X>=PanelLeft||!Viewport.Contains(p))return -1;
    for(int index=0;index<owner.settings.Slots.Count;index++)if(TileBounds(index).Contains(p))return index;return -1;
   }
   void InitReorder(){reorderTimer.Tick+=(_,_)=>ReorderTick(DateTime.UtcNow);}
@@ -40,7 +40,7 @@ public sealed partial class MainForm {
    if(target!=hoveredBank){hoveredBank=target;hoverSince=now;}
    if(target>=0&&target!=owner.bank&&(now-hoverSince).TotalMilliseconds>=550){owner.bank=target;reorderOver=-1;Invalidate();}
    if(mouse.X>=263&&mouse.X<=GridRight&&(now-lastScroll).TotalMilliseconds>=120){
-    float next=mouse.Y>=837&&mouse.Y<=889?Math.Min(MaxScroll,owner.scrollY+RowStep/3):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollY-RowStep/3):owner.scrollY;
+    float next=mouse.Y>=ViewBottom-28&&mouse.Y<=ViewBottom+24?Math.Min(MaxScroll,owner.scrollY+RowStep/3):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollY-RowStep/3):owner.scrollY;
     if(next!=owner.scrollY){owner.scrollY=next;SnapScroll();lastScroll=now;}
    }
    reorderOver=TileAt(mouse);
@@ -56,15 +56,15 @@ public sealed partial class MainForm {
   }
   bool FinishReorder(){
    if(FinishBankReorder())return true;if(reorderFrom<0)return false;int from=reorderFrom,to=TileAt(mouse);bool moved=reorderMoved;CancelReorder();
-   if(moved&&to>=0)owner.Try(()=>owner.MoveSound(from,to));return true;
+   if(moved&&to>=0)owner.Try(()=>owner.MoveSound(from,to));else if(!moved&&to==from)owner.Try(()=>owner.PaintTile(from));return true;
   }
   protected override void OnMouseCaptureChanged(EventArgs e){base.OnMouseCaptureChanged(e);if(!Capture&&(reorderFrom>=0||bankFrom>=0))CancelReorder();}
   void DrawReorder(Graphics g){
    if(!owner.sorting)return;
-   TextAt(g,T("Ziehen · Bänke links halten · Esc beendet","Drag · hold over a bank · Esc to finish"),276,87,12,green,width:650,height:20);
+   TextAt(g,T("Ziehen verschiebt · Klick färbt · Esc beendet","Drag to move · click to color · Esc to finish"),276,87,12,green,width:650,height:20);
    DrawBankReorder(g);if(reorderFrom<0)return;
    if(reorderOver>=0&&reorderOver!=reorderFrom){var r=TileBounds(reorderOver);using var path=Shape(r,12);using var p=new Pen(green,3);g.DrawPath(p,path);TextAt(g,T("Hier einfügen","Insert here"),r.X+12,r.Y+46,15,green,true,width:r.Width-24,height:24);}
-   var x=Math.Clamp(mouse.X+16,263,928);var y=Math.Clamp(mouse.Y-20,194,846);var ghost=new RectangleF(x,y,225,42);Box(g,ghost,C(73,61,34),C(39,34,24),8,green);TextAt(g,"↕  "+owner.settings.Slots[reorderFrom].Name,x+12,y+10,16,ink,true,width:201,height:24);
+   var x=Math.Clamp(mouse.X+16,263,GridRight-596);var y=Math.Clamp(mouse.Y-20,194,ViewBottom-19);var ghost=new RectangleF(x,y,225,42);Box(g,ghost,C(73,61,34),C(39,34,24),8,green);TextAt(g,"↕  "+owner.settings.Slots[reorderFrom].Name,x+12,y+10,16,ink,true,width:201,height:24);
   }
  }
 }
