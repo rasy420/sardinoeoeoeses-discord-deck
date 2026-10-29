@@ -30,7 +30,7 @@ public sealed partial class MainForm {
   using(var server=new LanServer(form.settings,form.Dispatch,47846,47847)){
    using var http=new HttpClient{BaseAddress=new Uri("http://127.0.0.1:47846")};http.DefaultRequestHeaders.Add("X-DiscordDeck-Key",form.settings.MobileToken);
    T Await<T>(Task<T> task){while(!task.IsCompleted){Application.DoEvents();Thread.Sleep(5);}return task.GetAwaiter().GetResult();}
-   var old=JsonDocument.Parse(Await(http.GetStringAsync("/status")));Check(old.RootElement.GetProperty("slots")[99].GetProperty("name").GetString()==original[0].Name,"Real LAN status exposes moved sound at slot 100");
+   var old=JsonDocument.Parse(Await(http.GetStringAsync("/status")));Check(form.PhoneOnline&&form.settings.PhoneConnected,"Real LAN status from the phone turns the Connect phone lamp green");Check(old.RootElement.GetProperty("slots")[99].GetProperty("name").GetString()==original[0].Name,"Real LAN status exposes moved sound at slot 100");
    var snapshot=form.Dispatch("status",0);form.MoveSound(99,98);Check(JsonSerializer.SerializeToElement(snapshot).GetProperty("slots")[99].GetProperty("name").GetString()==original[0].Name,"In-flight status reply keeps a consistent order while sounds move");var fresh=JsonDocument.Parse(Await(http.GetStringAsync("/status")));Check(fresh.RootElement.GetProperty("slots")[98].GetProperty("name").GetString()==original[0].Name,"Next existing Android poll receives new order without reconnecting");
    var gain=Await(http.PostAsync("/gain/99/237",null));Check(gain.IsSuccessStatusCode&&original[0].Volume==2.37f,"Existing Android HTTP gain route targets reordered sound");form.MoveSound(98,99);
   }

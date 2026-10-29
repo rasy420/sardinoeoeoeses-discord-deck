@@ -13,7 +13,7 @@ public sealed partial class MainForm {
  bool syncing;
  void BuildReferenceLayout(){
   BackColor=Color.FromArgb(12,18,22);
-  deck=new ReferenceDeck(this){Dock=DockStyle.Fill};Controls.Add(deck);
+  deck=new ReferenceDeck(this){Dock=DockStyle.Fill};Controls.Add(deck);InitPhoneWatch();
   foreach(var combo in new[]{input,output,monitorOutput}){combo.Visible=false;combo.Parent=deck;combo.DropDownStyle=ComboBoxStyle.DropDownList;combo.FlatStyle=FlatStyle.Flat;combo.BackColor=Color.FromArgb(27,35,41);combo.ForeColor=Color.FromArgb(242,242,237);combo.Font=new Font("Segoe UI",9);}
   selectedGain.Visible=false;selectedGain.Parent=deck;selectedGain.BackColor=Color.FromArgb(20,28,34);selectedGain.ForeColor=Color.White;selectedGain.Font=new Font("Segoe UI",11);
   selectedGain.ValueChanged+=(_,_)=>{if(syncing)return;draftGain=(float)selectedGain.Value/100;StopPanelPreview();deck.Invalidate();};
@@ -45,7 +45,6 @@ public sealed partial class MainForm {
   catch(Exception e){if(!IsDisposed){editError=e.Message;status.Text=e.Message;}}
   finally{importing=false;if(!IsDisposed)deck.Invalidate();}
  }
- void PairPhone(){Try(()=>{if(lan==null)throw new Exception(T("LAN-Server ist nicht aktiv.","LAN server is not running."));MessageBox.Show(this,T("Code in der Android-App eingeben (2 Minuten gültig):","Enter this code in the Android app (valid for 2 minutes):")+"\n\n"+lan.BeginPairing()+"\n\n"+T("PC und Handy müssen im selben lokalen Netz sein.","PC and phone must be on the same local network."),T("Handy verbinden","Connect phone"));});}
  void ChangeDevice(ComboBox combo,AudioDevice device){combo.SelectedItem=device;bool running=audio.Running;ReadSettings();settings.Save();status.Text=T("Gewählt: ","Selected: ")+device.Name;CheckDiscord();if(running){audio.Stop();Try(StartAudio);}deck.Invalidate();}
  void ToggleRouting(bool microphone){if(audio.Running){audio.Stop();}if(microphone)mic.Checked=!mic.Checked;else monitorCheck.Checked=!monitorCheck.Checked;ReadSettings();settings.Save();if(settings.AudioEnabled)Try(StartAudio);deck.Invalidate();}
  sealed partial class ReferenceDeck:Control {
@@ -73,7 +72,7 @@ public sealed partial class MainForm {
    // The two sardine illustrations are taken from the supplied design itself.
    g.DrawImage(reference,new RectangleF(14,8,107,43),new RectangleF(14,8,107,43),GraphicsUnit.Pixel);
    TextAt(g,"Sardinöööses",140,8.5f,27,ink,true,width:200,height:34);{using var tf=new Font("Bahnschrift SemiCondensed",27,FontStyle.Regular,GraphicsUnit.Pixel);using var sf=new Font("Segoe UI",10.5f,FontStyle.Regular,GraphicsUnit.Pixel);using var sb=new SolidBrush(C(214,180,110));var tw=g.MeasureString("Sardinöööses",tf,1000,StringFormat.GenericTypographic).Width;const string sub="SOUNDBOARD";float x0=143,x1=140+tw-2,cw=g.MeasureString("D",sf,100,StringFormat.GenericTypographic).Width;for(int i=0;i<sub.Length;i++){var w=g.MeasureString(sub[i].ToString(),sf,100,StringFormat.GenericTypographic).Width;g.DrawString(sub[i].ToString(),sf,sb,x0+(x1-cw-x0)*i/(sub.Length-1)+(cw-w)/2,41.5f,StringFormat.GenericTypographic);}}
-   var phoneButton=new RectangleF(1031,11,170,39);bool phoneHint=owner.PhoneHint;if(phoneHint)Pulse(g,phoneButton,6);Button(g,phoneButton,T("    Handy verbinden","    Connect phone"),owner.PairPhone,highlight:phoneHint);Phone(g,phoneHint);Button(g,new(1216,11,122,39),"MyInstants  ↗",()=>SoundCatalog.CreateButton().PerformClick());Line(g,1358,12,1358,49);
+   var phoneButton=new RectangleF(1031,11,170,39);bool phoneHint=owner.PhoneHint;if(phoneHint)Pulse(g,phoneButton,6);Button(g,phoneButton,T("    Handy verbinden","    Connect phone"),owner.PairPhone,highlight:phoneHint);Phone(g,phoneHint);PhoneLamp(g);Button(g,new(1216,11,122,39),"MyInstants  ↗",()=>SoundCatalog.CreateButton().PerformClick());Line(g,1358,12,1358,49);
    {var lang=new RectangleF(922,11,56,39);Box(g,lang,C(28,36,42),C(22,29,35),8,C(64,77,87));TextAt(g,"DE",lang.X+9,lang.Y+10,14,En?muted:green,true,width:22,height:20);TextAt(g,"/",lang.X+26,lang.Y+9,14,C(90,104,116),width:8,height:20);TextAt(g,"EN",lang.X+33,lang.Y+10,14,En?green:muted,true,width:22,height:20);Hit(lang,()=>owner.SetLanguage(!En));
     var help=new RectangleF(984,11,40,39);Box(g,help,C(28,36,42),C(22,29,35),8,C(64,77,87));TextAt(g,"?",help.X+14,help.Y+7,19,ink,true,width:20,height:26);Hit(help,owner.StartTour);}
    if(owner.discordWarning is {} warn){var w=new RectangleF(466,9,450,44);Box(g,w,C(176,42,42),C(140,30,32),8,C(236,92,84));TextAt(g,"⚠  "+warn.Title,w.X+12,w.Y+4,13,C(255,226,220),width:warn.OpensDiscord?320:426,height:18);TextAt(g,warn.Detail,w.X+12,w.Y+21,15,C(255,255,255),true,warn.OpensDiscord?330:426,22);if(warn.OpensDiscord){var o=new RectangleF(w.Right-98,w.Y+7,90,30);Box(g,o,C(236,88,80),C(214,64,60),6,C(255,150,140));TextAt(g,T("Öffnen  ↗","Open  ↗"),o.X+12,o.Y+6,14,C(255,255,255),width:80,height:20);Hit(w,owner.OpenDiscordVoice);}}
