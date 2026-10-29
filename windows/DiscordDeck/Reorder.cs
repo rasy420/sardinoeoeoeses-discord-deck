@@ -26,11 +26,11 @@ public sealed partial class MainForm {
   readonly System.Windows.Forms.Timer reorderTimer=new(){Interval=100};
   internal int Columns=>4;
   internal float GridRight=>1524;
-  internal int MaxScroll=>Math.Max(0,(int)Math.Ceiling(20d/Columns)-5);
-  internal RectangleF TileBounds(int index){int j=index-owner.bank*20;float step=(GridRight-273)/Columns;return new(273+j%Columns*step,195+(j/Columns-owner.scrollRow)*135.5f,step-13,120);}
+  internal float MaxScroll=>4*BankHeight;
+  internal RectangleF TileBounds(int index){float step=(GridRight-273)/Columns;return new(273+index%Columns*step,195+index/Columns*RowStep-owner.scrollY,step-13,120);}
   internal int TileAt(PointF p){
-   if(owner.soundPanelOpen&&p.X>=1169||!new RectangleF(263,190,GridRight-263,675).Contains(p))return -1;
-   for(int j=0;j<20;j++){int index=owner.bank*20+j;var r=TileBounds(index);if(r.Y>=190&&r.Y<=858&&r.Contains(p))return index;}return -1;
+   if(owner.soundPanelOpen&&p.X>=1169||!Viewport.Contains(p))return -1;
+   for(int index=0;index<owner.settings.Slots.Count;index++)if(TileBounds(index).Contains(p))return index;return -1;
   }
   void InitReorder(){reorderTimer.Tick+=(_,_)=>ReorderTick(DateTime.UtcNow);}
   internal void CancelReorder(){bankFrom=bankOver=-1;reorderFrom=reorderOver=hoveredBank=-1;reorderMoved=false;reorderTimer.Stop();Capture=false;Cursor=Cursors.Default;Invalidate();}
@@ -38,10 +38,10 @@ public sealed partial class MainForm {
    if(reorderFrom<0)return;
    int target=-1;for(int b=0;b<5;b++)if(new RectangleF(14,123+b*64,219,47).Contains(mouse)){target=b;break;}
    if(target!=hoveredBank){hoveredBank=target;hoverSince=now;}
-   if(target>=0&&target!=owner.bank&&(now-hoverSince).TotalMilliseconds>=550){owner.bank=target;owner.scrollRow=0;reorderOver=-1;Invalidate();}
-   if(mouse.X>=263&&mouse.X<=GridRight&&(now-lastScroll).TotalMilliseconds>=450){
-    int next=mouse.Y>=837&&mouse.Y<=889?Math.Min(MaxScroll,owner.scrollRow+1):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollRow-1):owner.scrollRow;
-    if(next!=owner.scrollRow){owner.scrollRow=next;lastScroll=now;Invalidate();}
+   if(target>=0&&target!=owner.bank&&(now-hoverSince).TotalMilliseconds>=550){owner.bank=target;reorderOver=-1;Invalidate();}
+   if(mouse.X>=263&&mouse.X<=GridRight&&(now-lastScroll).TotalMilliseconds>=120){
+    float next=mouse.Y>=837&&mouse.Y<=889?Math.Min(MaxScroll,owner.scrollY+RowStep/3):mouse.Y>=190&&mouse.Y<=220?Math.Max(0,owner.scrollY-RowStep/3):owner.scrollY;
+    if(next!=owner.scrollY){owner.scrollY=next;SnapScroll();lastScroll=now;}
    }
    reorderOver=TileAt(mouse);
   }

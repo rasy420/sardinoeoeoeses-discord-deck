@@ -3,7 +3,10 @@ using System.Text.Json;
 namespace DiscordDeck;
 public sealed class SoundSlot { public string Id {get;set;}=Guid.NewGuid().ToString(); public string SourceUrl {get;set;}="";public string Name {get;set;}=""; public bool CustomName {get;set;} public string File {get;set;}="";public float Volume {get;set;}=.65f;
  // Abspielbereich in Sekunden; TrimEnd 0 = bis zum Ende. Die Datei selbst bleibt unverändert.
- public double TrimStart {get;set;} public double TrimEnd {get;set;} }
+ public double TrimStart {get;set;} public double TrimEnd {get;set;}
+ // Neu importierte Sounds in freien Plätzen starten mit 150 %; belegte Plätze und eigene Pegel bleiben unverändert.
+ public const float DefaultVolume=.65f,ImportVolume=1.5f;
+ public static void ApplyImportVolume(SoundSlot slot){if(string.IsNullOrWhiteSpace(slot.File)&&Math.Abs(slot.Volume-DefaultVolume)<1e-4f)slot.Volume=ImportVolume;} }
 public sealed class SoundBank { public string Id {get;set;}=Guid.NewGuid().ToString();public string Name {get;set;}=""; }
 public sealed class Settings {
  public List<SoundBank> Banks {get;set;}=Enumerable.Range(0,5).Select(_=>new SoundBank()).ToList();
@@ -12,7 +15,7 @@ public sealed class Settings {
  public bool MonitorEnabled {get;set;}=true;
  public string MonitorId {get;set;}="";
  public bool AudioEnabled {get;set;}=false;
- public string Language {get;set;}="de"; public bool TourDone {get;set;}
+ public string Language {get;set;}="de"; public bool TourDone {get;set;} public bool PhoneConnected {get;set;}
  public string OutputId {get;set;}="";public string MicrophoneId {get;set;}="";public bool MixMicrophone {get;set;}=true;
  public float MicrophoneVolume {get;set;}=1;public float MasterVolume {get;set;}=.7f;
  public string Token {get;set;}=Convert.ToHexString(RandomNumberGenerator.GetBytes(32));

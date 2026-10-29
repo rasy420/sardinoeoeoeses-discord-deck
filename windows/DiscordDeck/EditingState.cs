@@ -24,7 +24,8 @@ public sealed partial class MainForm {
  }
  internal void ActivateTile(int index){
   if(!DismissSoundSettings())return;
-  if(string.IsNullOrEmpty(settings.Slots[index].File))OpenSoundSettings(index);else Play(index);
+  if(string.IsNullOrEmpty(settings.Slots[index].File))return;
+  Play(index);
  }
  internal void CloseSoundSettings(){if(!ResolveDraft())return;soundEditor?.Dispose();soundEditor=null;StopPanelPreview();soundPanelOpen=false;deck.ClampScroll();deck.Focus();deck.Invalidate();}
  internal void RemoveSound(SoundSlot slot){
@@ -58,7 +59,7 @@ public sealed partial class MainForm {
  }
  sealed partial class ReferenceDeck {
   int keyboardTile;
-  internal void ClampScroll(){owner.scrollRow=Math.Clamp(owner.scrollRow,0,MaxScroll);}
+  internal void ClampScroll(){owner.scrollY=Math.Clamp(owner.scrollY,0,MaxScroll);SnapScroll();}
   void ActivateKeyboard(){owner.Try(()=>owner.ActivateTile(keyboardTile));}
   protected override bool ProcessDialogKey(Keys key){if(key==Keys.Tab||key==(Keys.Shift|Keys.Tab)){if(hits.Count>0)focusHit=(focusHit+(key.HasFlag(Keys.Shift)?hits.Count-1:1)+hits.Count)%hits.Count;Invalidate();return true;}return base.ProcessDialogKey(key);}
  }

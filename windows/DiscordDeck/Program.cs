@@ -8,7 +8,7 @@ static class Program {
  if(args.Contains("--discord-check")){var r=DiscordVoice.Read();File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"discord-check.json"),JsonSerializer.Serialize(new{discord=r,outputs=AudioEngine.Devices().Where(d=>d.Direction=="Render"&&AudioEngine.IsVirtualOutput(d.Name)).Select(d=>new{d.Name,paired=MainForm.PairedCapture(d.Id)?.name,warning=MainForm.Evaluate(d.Id)})},new JsonSerializerOptions{WriteIndented=true}));return;}
  if(args.Contains("--import-ui-test")){MainForm.RunImportUiTest();return;}
  if(args.Contains("--overlay-test")){MainForm.RunOverlayTest();return;}
- if(args.Contains("--tile-stop-test")){MainForm.RunTileStopTest();return;}
+ if(args.Contains("--tile-stop-test")){MainForm.RunTileStopTest();return;}if(args.Contains("--wall-test")){MainForm.RunWallTest();return;}
  if(args.Contains("--import-timeline-test")){MainForm.RunImportTimelineTest();return;}
  if(args.Contains("--mic-level-test")){MainForm.RunMicLevelTest();return;}
  if(args.Contains("--mobile-stop-test")){MainForm.RunMobileStopTest(args.Contains("--fixture"));return;}

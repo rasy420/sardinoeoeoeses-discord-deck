@@ -18,7 +18,7 @@ public sealed partial class MainForm {
   static int BankAt(PointF p){for(int i=0;i<5;i++)if(new RectangleF(14,123+i*64,219,47).Contains(p))return i;return -1;}
   bool BeginBankReorder(PointF p){int b=BankAt(p);if(b<0||BankPencilBounds(b).Contains(p))return false;bankFrom=bankOver=b;reorderDown=p;reorderMoved=false;Capture=true;Cursor=Cursors.SizeAll;Invalidate();return true;}
   bool ContinueBankReorder(PointF p){if(bankFrom<0)return false;if(Math.Abs(p.X-reorderDown.X)+Math.Abs(p.Y-reorderDown.Y)>6)reorderMoved=true;bankOver=BankAt(p);Cursor=bankOver>=0?Cursors.SizeAll:Cursors.No;Invalidate();return true;}
-  bool FinishBankReorder(){if(bankFrom<0)return false;int from=bankFrom,to=BankAt(mouse);bool moved=reorderMoved;CancelReorder();if(moved&&to>=0)owner.Try(()=>owner.MoveBank(from,to));else if(!moved){owner.bank=from;owner.scrollRow=0;Invalidate();}return true;}
+  bool FinishBankReorder(){if(bankFrom<0)return false;int from=bankFrom,to=BankAt(mouse);bool moved=reorderMoved;CancelReorder();if(moved&&to>=0)owner.Try(()=>owner.MoveBank(from,to));else if(!moved)ScrollToBank(from);return true;}
   void DrawBankReorder(Graphics g){if(bankFrom<0)return;if(bankOver>=0){var r=new RectangleF(14,123+bankOver*64,219,47);using var pen=new Pen(green,3);using var path=Shape(r,10);g.DrawPath(pen,path);}if(!reorderMoved)return;var ghost=new RectangleF(Math.Clamp(mouse.X+14,20,1200),Math.Clamp(mouse.Y-15,72,860),220,40);Box(g,ghost,C(73,61,34),C(39,34,24),8,green);TextAt(g,"↕ "+owner.BankName(bankFrom),ghost.X+12,ghost.Y+10,15,ink,width:196,height:24);}
  }
 }

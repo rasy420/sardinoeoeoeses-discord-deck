@@ -30,7 +30,7 @@ public sealed class LanServer:IDisposable {
     if(request?.pin!=pin)return Results.StatusCode(403);
     pin="";return Results.Json(new{ok=true,key=settings.MobileToken,id=settings.ServerId,name=Environment.MachineName});}
   });
-  web.MapGet("/status",async(HttpContext ctx)=>Authorized(ctx)?Results.Json(await OnUi("status",0)):Results.StatusCode(403));
+  web.MapGet("/status",async(HttpContext ctx)=>Authorized(ctx)?Results.Json(await OnUi("phone-status",0)):Results.StatusCode(403));
   web.MapPost("/play/{slot:int}",async(HttpContext ctx,int slot)=>!Authorized(ctx)?Results.StatusCode(403):slot<1||slot>100?Results.BadRequest():Results.Json(await OnUi("play",slot-1)));
   foreach(var action in new[]{"play","stop"}){var command=action;web.MapPost("/"+action+"-sound/{id}",async(HttpContext ctx,string id)=>!Authorized(ctx)?Results.StatusCode(403):!Guid.TryParse(id,out _)?Results.BadRequest():Results.Json(await OnUi(()=>{var index=settings.Slots.FindIndex(s=>s.Id==id);if(index<0)return new{ok=false,error="Sound no longer exists"};return dispatch(command=="play"?"play":"stop-slot",index);})));}
   web.MapPost("/gain/{slot:int}/{percent:int}",async(HttpContext ctx,int slot,int percent)=>!Authorized(ctx)?Results.StatusCode(403):slot<1||slot>100||percent<0||percent>400?Results.BadRequest():Results.Json(await OnUi("gain",(slot-1)*401+percent)));web.MapPost("/stop",async(HttpContext ctx)=>Authorized(ctx)?Results.Json(await OnUi("stop",0)):Results.StatusCode(403));
